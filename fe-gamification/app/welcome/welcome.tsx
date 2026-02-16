@@ -13,7 +13,7 @@ function randomSplash() {
 }
 
 const mainMenuItems = [
-  { to: "/", label: "Lernen starten", icon: "▶" },
+  { to: "/level-selection", label: "Lernen starten", icon: "▶" },
   { to: "/fortschritt", label: "Fortschritt", icon: "📊" },
   { to: "/rangliste", label: "Rangliste", icon: "🏆" },
 ];
