@@ -1,9 +1,9 @@
-import { useRef } from "react";
 import { Link } from "react-router";
+import { useRef } from "react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type Level = {
+export type Level = {
   id: number;
   x: number;
   y: number;
@@ -18,39 +18,14 @@ const MAP_W = 1840;
 const MAP_H = 430;
 const NODE_R = 36;
 
-// ─── Level data ───────────────────────────────────────────────────────────────
-
-const LEVELS: Level[] = [
-  { id: 1, x: 125,  y: 295, stars: 3,  title: "Grundlagen"  },
-  { id: 2, x: 340,  y: 215, stars: 2,  title: "Variablen"   },
-  { id: 3, x: 555,  y: 280, stars: 1,  title: "Schleifen"   },
-  { id: 4, x: 765,  y: 200, stars: 0,  title: "Funktionen"  },
-  { id: 5, x: 975,  y: 268, stars: -1, title: "Arrays"      },
-  { id: 6, x: 1185, y: 208, stars: -1, title: "Objekte"     },
-  { id: 7, x: 1395, y: 275, stars: -1, title: "Klassen"     },
-  { id: 8, x: 1605, y: 210, stars: -1, title: "Algorithmen" },
-];
-
-// Smooth bezier through all level centers
-const PATH_D = (() => {
-  let d = `M ${LEVELS[0].x} ${LEVELS[0].y}`;
-  for (let i = 1; i < LEVELS.length; i++) {
-    const p = LEVELS[i - 1];
-    const c = LEVELS[i];
-    const mx = (p.x + c.x) / 2;
-    d += ` C ${mx},${p.y} ${mx},${c.y} ${c.x},${c.y}`;
-  }
-  return d;
-})();
-
 // ─── Decoration data ──────────────────────────────────────────────────────────
 
 // [x, y, scale]
 const MOUNTAINS: [number, number, number][] = [
-  [155,  50, 1.3],
-  [390,  43, 1.1],
-  [618,  51, 1.2],
-  [845,  44, 1.0],
+  [155, 50, 1.3],
+  [390, 43, 1.1],
+  [618, 51, 1.2],
+  [845, 44, 1.0],
   [1045, 52, 1.15],
   [1258, 43, 1.05],
   [1472, 51, 1.2],
@@ -60,55 +35,102 @@ const MOUNTAINS: [number, number, number][] = [
 // [x, y, scale]
 const TREES: [number, number, number][] = [
   // Lower forest – first row
-  [50,  362, 1.1], [148, 375, 0.95], [242, 358, 1.0],  [345, 372, 1.15],
-  [438, 360, 0.9], [530, 376, 1.05], [622, 362, 1.1],  [715, 374, 0.9],
-  [808, 360, 1.0], [900, 378, 0.95], [990, 364, 1.1],  [1082,376, 0.88],
-  [1174,362, 1.0],[1268,375, 1.12],[1358,360, 0.93],[1452,375, 1.05],
-  [1542,362, 1.1],[1636,374, 0.92],[1726,360, 1.0],[1800,372, 0.95],
+  [50, 362, 1.1],
+  [148, 375, 0.95],
+  [242, 358, 1.0],
+  [345, 372, 1.15],
+  [438, 360, 0.9],
+  [530, 376, 1.05],
+  [622, 362, 1.1],
+  [715, 374, 0.9],
+  [808, 360, 1.0],
+  [900, 378, 0.95],
+  [990, 364, 1.1],
+  [1082, 376, 0.88],
+  [1174, 362, 1.0],
+  [1268, 375, 1.12],
+  [1358, 360, 0.93],
+  [1452, 375, 1.05],
+  [1542, 362, 1.1],
+  [1636, 374, 0.92],
+  [1726, 360, 1.0],
+  [1800, 372, 0.95],
   // Lower forest – second row
-  [95,  400, 0.82],[192,410, 0.78],[290,398, 0.85],[490,404, 0.8],
-  [590, 398, 0.88],[688,408, 0.75],[880,400, 0.8],[998,410, 0.82],
-  [1096,400, 0.78],[1292,408, 0.88],[1492,400, 0.8],[1688,408, 0.82],
-  [1790,396, 0.78],
+  [95, 400, 0.82],
+  [192, 410, 0.78],
+  [290, 398, 0.85],
+  [490, 404, 0.8],
+  [590, 398, 0.88],
+  [688, 408, 0.75],
+  [880, 400, 0.8],
+  [998, 410, 0.82],
+  [1096, 400, 0.78],
+  [1292, 408, 0.88],
+  [1492, 400, 0.8],
+  [1688, 408, 0.82],
+  [1790, 396, 0.78],
   // Upper zone – between river and path
-  [72,  155, 0.82],[178,140, 0.9], [285,160, 0.78],[485,146, 0.88],
-  [575, 162, 0.75],[672,148, 0.85],[865,158, 0.8], [992,143, 0.9],
-  [1092,160, 0.75],[1202,146, 0.85],[1325,158, 0.8],[1452,144, 0.9],
-  [1565,162, 0.75],[1672,148, 0.85],[1758,158, 0.8],
+  [72, 155, 0.82],
+  [178, 140, 0.9],
+  [285, 160, 0.78],
+  [485, 146, 0.88],
+  [575, 162, 0.75],
+  [672, 148, 0.85],
+  [865, 158, 0.8],
+  [992, 143, 0.9],
+  [1092, 160, 0.75],
+  [1202, 146, 0.85],
+  [1325, 158, 0.8],
+  [1452, 144, 0.9],
+  [1565, 162, 0.75],
+  [1672, 148, 0.85],
+  [1758, 158, 0.8],
   // Edge sentinels
-  [18, 248, 0.72],[1818,240, 0.72],[35,318, 0.78],[1810,314, 0.72],
+  [18, 248, 0.72],
+  [1818, 240, 0.72],
+  [35, 318, 0.78],
+  [1810, 314, 0.72],
 ];
 
 // [x, y, scale]
 const ROCKS: [number, number, number][] = [
-  [255, 322, 0.9], [852, 332, 0.8], [1308, 318, 1.0], [1658, 326, 0.85],
-  [402, 175, 0.7], [1058, 168, 0.8], [1485, 176, 0.75], [740, 340, 0.85],
+  [255, 322, 0.9],
+  [852, 332, 0.8],
+  [1308, 318, 1.0],
+  [1658, 326, 0.85],
+  [402, 175, 0.7],
+  [1058, 168, 0.8],
+  [1485, 176, 0.75],
+  [740, 340, 0.85],
 ];
 
 // [x, y, hex-color]
 const FLOWERS: [number, number, string][] = [
-  [185, 322, "#f87171"], [358, 178, "#f472b6"], [625, 334, "#fb923c"],
-  [848, 168, "#a78bfa"], [1108, 328, "#f87171"], [1358, 175, "#f472b6"],
-  [1608, 336, "#fb923c"], [1775, 168, "#4ade80"],  [450, 338, "#fbbf24"],
-  [1210, 170, "#38bdf8"], [970, 338, "#4ade80"],
+  [185, 322, "#f87171"],
+  [358, 178, "#f472b6"],
+  [625, 334, "#fb923c"],
+  [848, 168, "#a78bfa"],
+  [1108, 328, "#f87171"],
+  [1358, 175, "#f472b6"],
+  [1608, 336, "#fb923c"],
+  [1775, 168, "#4ade80"],
+  [450, 338, "#fbbf24"],
+  [1210, 170, "#38bdf8"],
+  [970, 338, "#4ade80"],
 ];
 
 // ─── SVG sub-components ───────────────────────────────────────────────────────
-/**
- * Tree canopy from above — four lobes in cardinal directions + center fill.
- * The cross/clover silhouette is unmistakably a tree top. No drop shadow.
- */
+
 function TreeSVG({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
-  const r = 11 * s;   // lobe radius
-  const o = r * 1.05; // offset from center to lobe center
+  const r = 11 * s;
+  const o = r * 1.05;
   return (
     <g>
-      <circle cx={x}     cy={y - o} r={r} fill="#1e5820" />
-      <circle cx={x + o} cy={y}     r={r} fill="#1e5820" />
-      <circle cx={x}     cy={y + o} r={r} fill="#1e5820" />
-      <circle cx={x - o} cy={y}     r={r} fill="#1e5820" />
-      {/* Center — slightly lighter green suggests canopy density */}
-      <circle cx={x}     cy={y}     r={r * 0.88} fill="#265e26" />
+      <circle cx={x} cy={y - o} r={r} fill="#1e5820" />
+      <circle cx={x + o} cy={y} r={r} fill="#1e5820" />
+      <circle cx={x} cy={y + o} r={r} fill="#1e5820" />
+      <circle cx={x - o} cy={y} r={r} fill="#1e5820" />
+      <circle cx={x} cy={y} r={r * 0.88} fill="#265e26" />
     </g>
   );
 }
@@ -116,9 +138,21 @@ function TreeSVG({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
 function RockSVG({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
   return (
     <g>
-      <ellipse cx={x + 4 * s} cy={y + 4 * s} rx={13 * s} ry={8 * s} fill="rgba(0,0,0,0.16)" />
+      <ellipse
+        cx={x + 4 * s}
+        cy={y + 4 * s}
+        rx={13 * s}
+        ry={8 * s}
+        fill="rgba(0,0,0,0.16)"
+      />
       <ellipse cx={x} cy={y} rx={13 * s} ry={8 * s} fill="#7c7468" />
-      <ellipse cx={x - 2 * s} cy={y - 2 * s} rx={4.5 * s} ry={3 * s} fill="#b0a898" />
+      <ellipse
+        cx={x - 2 * s}
+        cy={y - 2 * s}
+        rx={4.5 * s}
+        ry={3 * s}
+        fill="#b0a898"
+      />
     </g>
   );
 }
@@ -167,37 +201,66 @@ function River() {
         />
       ))}
       {[182, 704, 1108, 1648].map((x, i) => (
-        <ellipse key={i} cx={x} cy={68 + (i % 2) * 5} rx={10} ry={6} fill="#166534" opacity={0.75} />
+        <ellipse
+          key={i}
+          cx={x}
+          cy={68 + (i % 2) * 5}
+          rx={10}
+          ry={6}
+          fill="#166534"
+          opacity={0.75}
+        />
       ))}
     </g>
   );
 }
 
-// Stone platform drawn in SVG (visual only – click target is the React overlay)
 function PlatformSVG({
-  x, y, done, active, locked,
+  x,
+  y,
+  done,
+  active,
+  locked,
 }: {
-  x: number; y: number; done: boolean; active: boolean; locked: boolean;
+  x: number;
+  y: number;
+  done: boolean;
+  active: boolean;
+  locked: boolean;
 }) {
-  const outer = locked ? "#6b6156" : done ? "#b8860b" : active ? "#0369a1" : "#7c6a4e";
-  const inner = locked ? "#a09088" : done ? "#e8b840" : active ? "#38bdf8" : "#d4bfa0";
+  const outer = locked
+    ? "#6b6156"
+    : done
+      ? "#b8860b"
+      : active
+        ? "#0369a1"
+        : "#7c6a4e";
+  const inner = locked
+    ? "#a09088"
+    : done
+      ? "#e8b840"
+      : active
+        ? "#38bdf8"
+        : "#d4bfa0";
 
   return (
     <g>
-      {/* Raised shadow */}
       <circle cx={x + 5} cy={y + 7} r={NODE_R + 5} fill="rgba(0,0,0,0.25)" />
-      {/* Stone rim */}
       <circle cx={x} cy={y} r={NODE_R + 4} fill={outer} />
-      {/* Platform surface */}
       <circle cx={x} cy={y} r={NODE_R} fill={inner} />
-      {/* Surface texture */}
-      <circle cx={x - 10} cy={y - 7}  r={3}   fill="rgba(0,0,0,0.07)" />
-      <circle cx={x + 8}  cy={y + 8}  r={2.5} fill="rgba(0,0,0,0.07)" />
-      <circle cx={x + 4}  cy={y - 13} r={2}   fill="rgba(0,0,0,0.05)" />
-      {/* Highlight */}
+      <circle cx={x - 10} cy={y - 7} r={3} fill="rgba(0,0,0,0.07)" />
+      <circle cx={x + 8} cy={y + 8} r={2.5} fill="rgba(0,0,0,0.07)" />
+      <circle cx={x + 4} cy={y - 13} r={2} fill="rgba(0,0,0,0.05)" />
       <circle cx={x - 9} cy={y - 11} r={8} fill="rgba(255,255,255,0.22)" />
       {active && (
-        <circle cx={x} cy={y} r={NODE_R + 10} fill="none" stroke="rgba(56,189,248,0.45)" strokeWidth={5} />
+        <circle
+          cx={x}
+          cy={y}
+          r={NODE_R + 10}
+          fill="none"
+          stroke="rgba(56,189,248,0.45)"
+          strokeWidth={5}
+        />
       )}
     </g>
   );
@@ -238,19 +301,21 @@ function LevelNode({ level, isCurrent }: { level: Level; isCurrent: boolean }) {
         pointerEvents: "none",
       }}
     >
-      {/* Bounce indicator – fixed 26px slot */}
       <div className="h-6.5 flex items-end justify-center w-full pb-1">
         {isCurrent && (
           <span
             className="font-pixel animate-bounce"
-            style={{ fontSize: "7px", color: "#fcd34d", textShadow: "1px 1px 0 #000" }}
+            style={{
+              fontSize: "7px",
+              color: "#fcd34d",
+              textShadow: "1px 1px 0 #000",
+            }}
           >
             ▼ JETZT
           </span>
         )}
       </div>
 
-      {/* Click target */}
       {locked ? (
         <div
           className="flex items-center justify-center rounded-full"
@@ -274,7 +339,6 @@ function LevelNode({ level, isCurrent }: { level: Level; isCurrent: boolean }) {
         </Link>
       )}
 
-      {/* Title */}
       <div
         className="mt-1.5 font-pixel text-center leading-tight px-1"
         style={{
@@ -300,11 +364,25 @@ function LevelNode({ level, isCurrent }: { level: Level; isCurrent: boolean }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export function LevelSelection() {
+// ↓ Receives levels as a prop instead of using a hardcoded constant
+export function LevelSelection({ levels }: { levels: Level[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const drag = useRef({ active: false, startX: 0, scrollLeft: 0 });
 
-  const currentLevel = LEVELS.find((l) => l.stars === 0);
+  const currentLevel = levels.find((l) => l.stars === 0);
+
+  // ↓ pathD is now computed from the prop inside the component
+  const pathD = (() => {
+    if (levels.length === 0) return "";
+    let d = `M ${levels[0].x} ${levels[0].y}`;
+    for (let i = 1; i < levels.length; i++) {
+      const p = levels[i - 1];
+      const c = levels[i];
+      const mx = (p.x + c.x) / 2;
+      d += ` C ${mx},${p.y} ${mx},${c.y} ${c.x},${c.y}`;
+    }
+    return d;
+  })();
 
   function onMouseDown(e: React.MouseEvent) {
     drag.current = {
@@ -319,7 +397,8 @@ export function LevelSelection() {
     if (!drag.current.active || !scrollRef.current) return;
     e.preventDefault();
     const x = e.pageX - scrollRef.current.offsetLeft;
-    scrollRef.current.scrollLeft = drag.current.scrollLeft - (x - drag.current.startX) * 1.4;
+    scrollRef.current.scrollLeft =
+      drag.current.scrollLeft - (x - drag.current.startX) * 1.4;
   }
 
   function stopDrag() {
@@ -344,7 +423,9 @@ export function LevelSelection() {
         </Link>
         <h1
           className="font-pixel text-base sm:text-xl text-stone-800 dark:text-stone-100"
-          style={{ textShadow: "2px 2px 0 #000, -1px -1px 0 rgba(255,255,255,0.2)" }}
+          style={{
+            textShadow: "2px 2px 0 #000, -1px -1px 0 rgba(255,255,255,0.2)",
+          }}
         >
           LEVEL AUSWAHL
         </h1>
@@ -375,7 +456,6 @@ export function LevelSelection() {
             onMouseLeave={stopDrag}
           >
             <div className="relative" style={{ width: MAP_W, height: MAP_H }}>
-
               {/* ── SVG world ── */}
               <svg
                 className="absolute inset-0 pointer-events-none"
@@ -384,31 +464,69 @@ export function LevelSelection() {
               >
                 {/* Grass base */}
                 <rect width={MAP_W} height={MAP_H} fill="#3d7a20" />
-                {/* Subtle grass variation */}
-                <rect x={0}    y={0}   width={600}  height={MAP_H} fill="#448c22" opacity={0.25} />
-                <rect x={700}  y={0}   width={500}  height={MAP_H} fill="#3a7018" opacity={0.20} />
-                <rect x={1300} y={0}   width={540}  height={MAP_H} fill="#448c22" opacity={0.22} />
+                <rect
+                  x={0}
+                  y={0}
+                  width={600}
+                  height={MAP_H}
+                  fill="#448c22"
+                  opacity={0.25}
+                />
+                <rect
+                  x={700}
+                  y={0}
+                  width={500}
+                  height={MAP_H}
+                  fill="#3a7018"
+                  opacity={0.2}
+                />
+                <rect
+                  x={1300}
+                  y={0}
+                  width={540}
+                  height={MAP_H}
+                  fill="#448c22"
+                  opacity={0.22}
+                />
 
-                {/* River – flows at the foot of the mountains */}
                 <River />
 
-                {/* Rocks */}
                 {ROCKS.map(([x, y, s], i) => (
                   <RockSVG key={i} x={x} y={y} s={s} />
                 ))}
 
-                {/* Flowers */}
                 {FLOWERS.map(([x, y, color], i) => (
                   <FlowerSVG key={i} x={x} y={y} color={color} />
                 ))}
 
-                {/* ── Dirt path ── */}
-                <path d={PATH_D} fill="none" stroke="#3d2208" strokeWidth={30} strokeLinecap="round" strokeLinejoin="round" />
-                <path d={PATH_D} fill="none" stroke="#c8922a" strokeWidth={22} strokeLinecap="round" strokeLinejoin="round" />
-                <path d={PATH_D} fill="none" stroke="#e8c070" strokeWidth={10} strokeLinecap="round" strokeLinejoin="round" />
+                {/* ── Dirt path – uses dynamic pathD ── */}
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke="#3d2208"
+                  strokeWidth={30}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke="#c8922a"
+                  strokeWidth={22}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke="#e8c070"
+                  strokeWidth={10}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
 
                 {/* Stone platforms */}
-                {LEVELS.map((level) => (
+                {levels.map((level) => (
                   <PlatformSVG
                     key={level.id}
                     x={level.x}
@@ -419,21 +537,19 @@ export function LevelSelection() {
                   />
                 ))}
 
-                {/* Trees – elevated objects, drawn last */}
                 {TREES.map(([x, y, s], i) => (
                   <TreeSVG key={i} x={x} y={y} s={s} />
                 ))}
               </svg>
 
-              {/* ── React HTML overlay (numbers, titles, stars, links) ── */}
-              {LEVELS.map((level) => (
+              {/* ── React HTML overlay ── */}
+              {levels.map((level) => (
                 <LevelNode
                   key={level.id}
                   level={level}
                   isCurrent={currentLevel?.id === level.id}
                 />
               ))}
-
             </div>
           </div>
 
