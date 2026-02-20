@@ -19,6 +19,7 @@ fun Application.module() {
         json()
     }
     configureDatabases()
+    configureOpenApi()
     configureAuth()
     configureRouting()
 }

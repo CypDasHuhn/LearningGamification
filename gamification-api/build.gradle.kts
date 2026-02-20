@@ -22,6 +22,8 @@ dependencies {
     implementation("io.ktor:ktor-server-core")
     implementation("io.ktor:ktor-server-resources")
     implementation("io.ktor:ktor-server-content-negotiation")
+    implementation("io.ktor:ktor-server-openapi")
+    implementation("io.ktor:ktor-server-swagger")
     implementation("io.ktor:ktor-serialization-gson")
     implementation("io.ktor:ktor-serialization-kotlinx-json")
     implementation("org.jetbrains.exposed:exposed-core:$exposed_version")
