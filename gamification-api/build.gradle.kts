@@ -18,6 +18,8 @@ application { mainClass = "io.ktor.server.netty.EngineMain" }
 kotlin { jvmToolchain(21) }
 
 dependencies {
+    implementation("io.ktor:ktor-server-auth")
+    implementation("io.ktor:ktor-server-auth-jwt")
     implementation("io.ktor:ktor-server-cors")
     implementation("io.ktor:ktor-server-core")
     implementation("io.ktor:ktor-server-resources")

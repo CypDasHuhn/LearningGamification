@@ -10,6 +10,12 @@ private lateinit var database: Database
 private const val sqliteDatabaseUrl = "jdbc:sqlite:./kls_database.db?foreign_keys=on"
 
 fun Application.configureDatabases() {
+    val seedEnabled = environment.config
+        .propertyOrNull("app.seed.enabled")
+        ?.getString()
+        ?.toBooleanStrictOrNull()
+        ?: false
+
     database = Database.connect(
         url = sqliteDatabaseUrl,
         driver = "org.sqlite.JDBC",
@@ -28,6 +34,10 @@ fun Application.configureDatabases() {
             Users,
             UserQuestionProgress,
         )
+
+        if (seedEnabled) {
+            seedMockData()
+        }
     }
 }
 

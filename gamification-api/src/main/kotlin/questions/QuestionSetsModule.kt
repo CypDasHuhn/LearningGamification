@@ -1,0 +1,17 @@
+package dev.gamification.backend.questions
+
+import dev.gamification.backend.auth.JwtAuthName
+import io.ktor.server.application.Application
+import io.ktor.server.auth.authenticate
+import io.ktor.server.routing.route
+import io.ktor.server.routing.routing
+
+fun Application.configureQuestionSets() {
+    routing {
+        authenticate(JwtAuthName) {
+            route("/question-sets") {
+                registerGetQuestionSetQuestionsEndpoint()
+            }
+        }
+    }
+}
