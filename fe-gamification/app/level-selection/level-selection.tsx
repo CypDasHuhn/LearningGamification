@@ -1,5 +1,6 @@
-import { Link } from "react-router";
-import { useRef } from "react";
+// app/level-selection/level-selection.tsx
+import { useRef, useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -17,24 +18,12 @@ export type Level = {
 const MAP_W = 1840;
 const MAP_H = 430;
 const NODE_R = 36;
+const CHAR_SPEED = 4; // samples to advance per animation frame
+const CHARACTER_Y_OFFSET = -54; // px above the path Y so the character stands on the path
 
 // ─── Decoration data ──────────────────────────────────────────────────────────
 
-// [x, y, scale]
-const MOUNTAINS: [number, number, number][] = [
-  [155, 50, 1.3],
-  [390, 43, 1.1],
-  [618, 51, 1.2],
-  [845, 44, 1.0],
-  [1045, 52, 1.15],
-  [1258, 43, 1.05],
-  [1472, 51, 1.2],
-  [1682, 46, 1.1],
-];
-
-// [x, y, scale]
 const TREES: [number, number, number][] = [
-  // Lower forest – first row
   [50, 362, 1.1],
   [148, 375, 0.95],
   [242, 358, 1.0],
@@ -55,7 +44,6 @@ const TREES: [number, number, number][] = [
   [1636, 374, 0.92],
   [1726, 360, 1.0],
   [1800, 372, 0.95],
-  // Lower forest – second row
   [95, 400, 0.82],
   [192, 410, 0.78],
   [290, 398, 0.85],
@@ -69,7 +57,6 @@ const TREES: [number, number, number][] = [
   [1492, 400, 0.8],
   [1688, 408, 0.82],
   [1790, 396, 0.78],
-  // Upper zone – between river and path
   [72, 155, 0.82],
   [178, 140, 0.9],
   [285, 160, 0.78],
@@ -85,14 +72,12 @@ const TREES: [number, number, number][] = [
   [1565, 162, 0.75],
   [1672, 148, 0.85],
   [1758, 158, 0.8],
-  // Edge sentinels
   [18, 248, 0.72],
   [1818, 240, 0.72],
   [35, 318, 0.78],
   [1810, 314, 0.72],
 ];
 
-// [x, y, scale]
 const ROCKS: [number, number, number][] = [
   [255, 322, 0.9],
   [852, 332, 0.8],
@@ -104,7 +89,6 @@ const ROCKS: [number, number, number][] = [
   [740, 340, 0.85],
 ];
 
-// [x, y, hex-color]
 const FLOWERS: [number, number, string][] = [
   [185, 322, "#f87171"],
   [358, 178, "#f472b6"],
@@ -119,11 +103,57 @@ const FLOWERS: [number, number, string][] = [
   [970, 338, "#4ade80"],
 ];
 
+// ─── Path helpers ─────────────────────────────────────────────────────────────
+
+/** Dense sample points along the cubic bezier path so movement feels smooth */
+function buildPathSamples(levels: Level[], samplesPerSegment = 150) {
+  const points: { x: number; y: number }[] = [];
+  for (let i = 1; i < levels.length; i++) {
+    const p = levels[i - 1];
+    const c = levels[i];
+    const mx = (p.x + c.x) / 2;
+    for (let t = 0; t <= 1; t += 1 / samplesPerSegment) {
+      const mt = 1 - t;
+      const x =
+        mt * mt * mt * p.x +
+        3 * mt * mt * t * mx +
+        3 * mt * t * t * mx +
+        t * t * t * c.x;
+      const y =
+        mt * mt * mt * p.y +
+        3 * mt * mt * t * p.y +
+        3 * mt * t * t * c.y +
+        t * t * t * c.y;
+      points.push({ x, y });
+    }
+  }
+  return points.filter(
+    (pt, i) =>
+      i === 0 ||
+      Math.abs(pt.x - points[i - 1].x) > 0.01 ||
+      Math.abs(pt.y - points[i - 1].y) > 0.01,
+  );
+}
+
+/** Return the sample index whose x is closest to the given level's x */
+function sampleIdxForLevel(samples: { x: number; y: number }[], level: Level) {
+  let best = 0;
+  let bestDist = Infinity;
+  for (let i = 0; i < samples.length; i++) {
+    const d = Math.abs(samples[i].x - level.x);
+    if (d < bestDist) {
+      bestDist = d;
+      best = i;
+    }
+  }
+  return best;
+}
+
 // ─── SVG sub-components ───────────────────────────────────────────────────────
 
 function TreeSVG({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
-  const r = 11 * s;
-  const o = r * 1.05;
+  const r = 11 * s,
+    o = r * 1.05;
   return (
     <g>
       <circle cx={x} cy={y - o} r={r} fill="#1e5820" />
@@ -161,12 +191,12 @@ function FlowerSVG({ x, y, color }: { x: number; y: number; color: string }) {
   return (
     <g opacity={0.85}>
       {[0, 1, 2, 3].map((i) => {
-        const angle = (i * Math.PI) / 2;
+        const a = (i * Math.PI) / 2;
         return (
           <circle
             key={i}
-            cx={x + Math.cos(angle) * 5}
-            cy={y + Math.sin(angle) * 5}
+            cx={x + Math.cos(a) * 5}
+            cy={y + Math.sin(a) * 5}
             r={3}
             fill={color}
           />
@@ -221,12 +251,14 @@ function PlatformSVG({
   done,
   active,
   locked,
+  charNearby,
 }: {
   x: number;
   y: number;
   done: boolean;
   active: boolean;
   locked: boolean;
+  charNearby: boolean;
 }) {
   const outer = locked
     ? "#6b6156"
@@ -242,7 +274,6 @@ function PlatformSVG({
       : active
         ? "#38bdf8"
         : "#d4bfa0";
-
   return (
     <g>
       <circle cx={x + 5} cy={y + 7} r={NODE_R + 5} fill="rgba(0,0,0,0.25)" />
@@ -262,11 +293,136 @@ function PlatformSVG({
           strokeWidth={5}
         />
       )}
+      {charNearby && !locked && (
+        <circle
+          cx={x}
+          cy={y}
+          r={NODE_R + 13}
+          fill="none"
+          stroke="rgba(252,211,77,0.75)"
+          strokeWidth={3}
+          strokeDasharray="6 4"
+        />
+      )}
     </g>
   );
 }
 
-// ─── React overlay components ─────────────────────────────────────────────────
+// ─── Pixel art character ──────────────────────────────────────────────────────
+/**
+ * 8×18 "pixel" sprite, each pixel rendered as a 3×3 div.
+ * Leg animation is done with two alternating leg columns via CSS.
+ */
+const PX = 3; // pixel size in real px
+
+function Pixel({
+  col,
+  row,
+  color,
+  w = 1,
+  h = 1,
+}: {
+  col: number;
+  row: number;
+  color: string;
+  w?: number;
+  h?: number;
+}) {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: col * PX,
+        top: row * PX,
+        width: w * PX,
+        height: h * PX,
+        background: color,
+      }}
+    />
+  );
+}
+
+function PixelCharacter({
+  facingLeft,
+  walking,
+}: {
+  facingLeft: boolean;
+  walking: boolean;
+}) {
+  const SKIN = "#f5c89a";
+  const HAIR = "#3d2b1f";
+  const SHIRT = "#e63946";
+  const PANTS = "#1d3557";
+  const BOOT = "#3a2010";
+  const EYE = "#1c1917";
+  const BELT = "#8b6914";
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: 8 * PX,
+        height: 18 * PX,
+        transform: facingLeft ? "scaleX(-1)" : "scaleX(1)",
+        imageRendering: "pixelated",
+        filter: "drop-shadow(1px 3px 0 rgba(0,0,0,0.55))",
+      }}
+    >
+      {/* Hair */}
+      <Pixel col={1} row={0} color={HAIR} w={6} />
+      <Pixel col={0} row={1} color={HAIR} />
+      <Pixel col={7} row={1} color={HAIR} />
+      {/* Head */}
+      <Pixel col={1} row={1} color={SKIN} w={6} />
+      <Pixel col={0} row={2} color={SKIN} w={8} />
+      <Pixel col={0} row={3} color={SKIN} w={8} />
+      {/* Eyes */}
+      <Pixel col={2} row={2} color={EYE} />
+      <Pixel col={5} row={2} color={EYE} />
+      {/* Shirt / body */}
+      <Pixel col={1} row={4} color={SHIRT} w={6} h={4} />
+      {/* Arms */}
+      <Pixel col={0} row={4} color={SKIN} h={3} />
+      <Pixel col={7} row={4} color={SKIN} h={3} />
+      {/* Belt */}
+      <Pixel col={1} row={8} color={BELT} w={6} />
+      {/* Pants + boots – walking animates via CSS class on wrapper */}
+      {walking ? (
+        <>
+          {/* Left leg (front) */}
+          <Pixel col={1} row={9} color={PANTS} w={3} h={3} />
+          <Pixel col={1} row={12} color={PANTS} w={3} h={1} />
+          <Pixel col={1} row={13} color={BOOT} w={3} h={2} />
+          {/* Right leg (back) */}
+          <Pixel col={4} row={9} color={PANTS} w={3} h={3} />
+          <Pixel col={4} row={12} color={PANTS} w={3} h={1} />
+          <Pixel col={4} row={13} color={BOOT} w={3} h={2} />
+        </>
+      ) : (
+        <>
+          <Pixel col={1} row={9} color={PANTS} w={6} h={4} />
+          <Pixel col={1} row={13} color={BOOT} w={3} h={2} />
+          <Pixel col={4} row={13} color={BOOT} w={3} h={2} />
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Keyframes injected once ──────────────────────────────────────────────────
+
+const KEYFRAMES = `
+@keyframes charBob {
+  0%,100% { transform: translateY(0px) translateX(-50%); }
+  50%      { transform: translateY(-3px) translateX(-50%); }
+}
+@keyframes charIdle {
+  0%,100% { transform: translateY(0px) translateX(-50%); }
+  50%      { transform: translateY(-1px) translateX(-50%); }
+}
+`;
+
+// ─── Overlay node label ───────────────────────────────────────────────────────
 
 function StarRow({ earned }: { earned: number }) {
   return (
@@ -287,9 +443,16 @@ function StarRow({ earned }: { earned: number }) {
   );
 }
 
-function LevelNode({ level, isCurrent }: { level: Level; isCurrent: boolean }) {
+function LevelNode({
+  level,
+  isCurrent,
+  charIsHere,
+}: {
+  level: Level;
+  isCurrent: boolean;
+  charIsHere: boolean;
+}) {
   const locked = level.stars === -1;
-
   return (
     <div
       className="absolute flex flex-col items-center"
@@ -302,7 +465,18 @@ function LevelNode({ level, isCurrent }: { level: Level; isCurrent: boolean }) {
       }}
     >
       <div className="h-6.5 flex items-end justify-center w-full pb-1">
-        {isCurrent && (
+        {charIsHere && !locked ? (
+          <span
+            className="font-pixel animate-bounce"
+            style={{
+              fontSize: "7px",
+              color: "#4ade80",
+              textShadow: "1px 1px 0 #000",
+            }}
+          >
+            ↵ ENTER
+          </span>
+        ) : isCurrent ? (
           <span
             className="font-pixel animate-bounce"
             style={{
@@ -313,9 +487,8 @@ function LevelNode({ level, isCurrent }: { level: Level; isCurrent: boolean }) {
           >
             ▼ JETZT
           </span>
-        )}
+        ) : null}
       </div>
-
       {locked ? (
         <div
           className="flex items-center justify-center rounded-full"
@@ -338,7 +511,6 @@ function LevelNode({ level, isCurrent }: { level: Level; isCurrent: boolean }) {
           {level.id}
         </Link>
       )}
-
       <div
         className="mt-1.5 font-pixel text-center leading-tight px-1"
         style={{
@@ -352,7 +524,6 @@ function LevelNode({ level, isCurrent }: { level: Level; isCurrent: boolean }) {
       >
         {level.title}
       </div>
-
       {!locked && (
         <div className="mt-0.5">
           <StarRow earned={Math.max(0, level.stars)} />
@@ -364,26 +535,156 @@ function LevelNode({ level, isCurrent }: { level: Level; isCurrent: boolean }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-// ↓ Receives levels as a prop instead of using a hardcoded constant
 export function LevelSelection({ levels }: { levels: Level[] }) {
+  const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
   const drag = useRef({ active: false, startX: 0, scrollLeft: 0 });
+  const rafRef = useRef<number>(0);
+  const keysRef = useRef({ left: false, right: false });
 
-  const currentLevel = levels.find((l) => l.stars === 0);
+  // Build path samples once
+  const samples = useRef<{ x: number; y: number }[]>([]);
+  if (samples.current.length === 0 && levels.length > 1) {
+    samples.current = buildPathSamples(levels, 150);
+  }
+  const S = samples.current;
 
-  // ↓ pathD is now computed from the prop inside the component
+  // Index of the last unlocked level
+  const lastUnlockedIdx = levels.reduce(
+    (acc, l, i) => (l.stars !== -1 ? i : acc),
+    0,
+  );
+  const maxSampleIdx =
+    S.length > 0 ? sampleIdxForLevel(S, levels[lastUnlockedIdx]) : 0;
+
+  // Character position as sample index (stored in ref for the game loop, mirrored in state for render)
+  const initialCharIdx =
+    S.length > 0
+      ? sampleIdxForLevel(
+          S,
+          levels.find((l) => l.stars === 0) ?? levels[lastUnlockedIdx],
+        )
+      : 0;
+  const charIdxRef = useRef<number>(initialCharIdx);
+
+  const [charIdx, setCharIdx] = useState<number>(initialCharIdx);
+  const [facingLeft, setFacingLeft] = useState(false);
+  const [walking, setWalking] = useState(false);
+  const facingLeftRef = useRef(false);
+
+  // Derived character world position
+  const charPos = S[charIdx] ?? { x: levels[0]?.x ?? 0, y: levels[0]?.y ?? 0 };
+
+  // Which level node is the character standing on?
+  const nearestLevel = levels.reduce(
+    (best, l) =>
+      Math.abs(l.x - charPos.x) < Math.abs(best.x - charPos.x) ? l : best,
+    levels[0],
+  );
+  const charIsOnNode =
+    nearestLevel && Math.abs(nearestLevel.x - charPos.x) < NODE_R;
+
+  // pathD (computed from prop)
   const pathD = (() => {
     if (levels.length === 0) return "";
     let d = `M ${levels[0].x} ${levels[0].y}`;
     for (let i = 1; i < levels.length; i++) {
-      const p = levels[i - 1];
-      const c = levels[i];
-      const mx = (p.x + c.x) / 2;
+      const p = levels[i - 1],
+        c = levels[i],
+        mx = (p.x + c.x) / 2;
       d += ` C ${mx},${p.y} ${mx},${c.y} ${c.x},${c.y}`;
     }
     return d;
   })();
 
+  // ── Game loop ──────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (S.length === 0) return;
+    function loop() {
+      const { left, right } = keysRef.current;
+      let moved = false;
+
+      if (right && !left) {
+        const next = Math.min(charIdxRef.current + CHAR_SPEED, maxSampleIdx);
+        if (next !== charIdxRef.current) {
+          charIdxRef.current = next;
+          setCharIdx(next);
+          if (facingLeftRef.current) {
+            facingLeftRef.current = false;
+            setFacingLeft(false);
+          }
+          moved = true;
+        }
+      } else if (left && !right) {
+        const next = Math.max(charIdxRef.current - CHAR_SPEED, 0);
+        if (next !== charIdxRef.current) {
+          charIdxRef.current = next;
+          setCharIdx(next);
+          if (!facingLeftRef.current) {
+            facingLeftRef.current = true;
+            setFacingLeft(true);
+          }
+          moved = true;
+        }
+      }
+
+      setWalking(moved);
+
+      // Keep character in viewport
+      if (moved && scrollRef.current && S[charIdxRef.current]) {
+        const cw = scrollRef.current.clientWidth;
+        const target = S[charIdxRef.current].x - cw / 2;
+        scrollRef.current.scrollLeft +=
+          (target - scrollRef.current.scrollLeft) * 0.08;
+      }
+
+      rafRef.current = requestAnimationFrame(loop);
+    }
+    rafRef.current = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [S, maxSampleIdx]);
+
+  // ── Keyboard ───────────────────────────────────────────────────────────────
+  useEffect(() => {
+    function onDown(e: KeyboardEvent) {
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        keysRef.current.left = true;
+      }
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        keysRef.current.right = true;
+      }
+      if (e.key === "Enter") {
+        const pos = S[charIdxRef.current];
+        if (!pos) return;
+        const nearest = levels.reduce(
+          (best, l) =>
+            Math.abs(l.x - pos.x) < Math.abs(best.x - pos.x) ? l : best,
+          levels[0],
+        );
+        if (
+          nearest &&
+          nearest.stars !== -1 &&
+          Math.abs(nearest.x - pos.x) < NODE_R
+        ) {
+          navigate(`/level/${nearest.id}`);
+        }
+      }
+    }
+    function onUp(e: KeyboardEvent) {
+      if (e.key === "ArrowLeft") keysRef.current.left = false;
+      if (e.key === "ArrowRight") keysRef.current.right = false;
+    }
+    window.addEventListener("keydown", onDown);
+    window.addEventListener("keyup", onUp);
+    return () => {
+      window.removeEventListener("keydown", onDown);
+      window.removeEventListener("keyup", onUp);
+    };
+  }, [levels, navigate, S]);
+
+  // ── Drag scroll ────────────────────────────────────────────────────────────
   function onMouseDown(e: React.MouseEvent) {
     drag.current = {
       active: true,
@@ -392,26 +693,24 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
     };
     if (scrollRef.current) scrollRef.current.style.cursor = "grabbing";
   }
-
   function onMouseMove(e: React.MouseEvent) {
     if (!drag.current.active || !scrollRef.current) return;
     e.preventDefault();
-    const x = e.pageX - scrollRef.current.offsetLeft;
     scrollRef.current.scrollLeft =
-      drag.current.scrollLeft - (x - drag.current.startX) * 1.4;
+      drag.current.scrollLeft -
+      (e.pageX - scrollRef.current.offsetLeft - drag.current.startX) * 1.4;
   }
-
   function stopDrag() {
     drag.current.active = false;
     if (scrollRef.current) scrollRef.current.style.cursor = "grab";
   }
 
-  function scrollBy(amount: number) {
-    scrollRef.current?.scrollBy({ left: amount, behavior: "smooth" });
-  }
+  const currentLevel = levels.find((l) => l.stars === 0);
 
   return (
     <main className="min-h-screen flex flex-col bg-linear-to-b from-sky-300 via-amber-100 to-emerald-200 dark:from-slate-900 dark:via-amber-950/30 dark:to-slate-900">
+      <style>{KEYFRAMES}</style>
+
       {/* Header */}
       <header className="flex items-center justify-between px-4 sm:px-8 py-4">
         <Link
@@ -435,9 +734,10 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
       {/* Map area */}
       <div className="flex-1 flex flex-col items-center justify-center py-4">
         <div className="flex items-center w-full gap-2 px-2">
-          {/* Left arrow */}
           <button
-            onClick={() => scrollBy(-320)}
+            onClick={() =>
+              scrollRef.current?.scrollBy({ left: -320, behavior: "smooth" })
+            }
             className="shrink-0 font-pixel text-stone-200 bg-stone-700/80 dark:bg-stone-900/80 border-4 border-stone-800 rounded px-3 py-3 hover:brightness-125 active:scale-95 transition-all"
             style={{ boxShadow: "3px 3px 0 rgba(0,0,0,0.4)" }}
             aria-label="Scroll left"
@@ -445,7 +745,6 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
             ◀
           </button>
 
-          {/* Scrollable map */}
           <div
             ref={scrollRef}
             className="flex-1 overflow-x-scroll overflow-y-hidden select-none rounded-xl border-4 border-stone-800/40"
@@ -462,7 +761,6 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
                 width={MAP_W}
                 height={MAP_H}
               >
-                {/* Grass base */}
                 <rect width={MAP_W} height={MAP_H} fill="#3d7a20" />
                 <rect
                   x={0}
@@ -488,18 +786,15 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
                   fill="#448c22"
                   opacity={0.22}
                 />
-
                 <River />
-
                 {ROCKS.map(([x, y, s], i) => (
                   <RockSVG key={i} x={x} y={y} s={s} />
                 ))}
-
-                {FLOWERS.map(([x, y, color], i) => (
-                  <FlowerSVG key={i} x={x} y={y} color={color} />
+                {FLOWERS.map(([x, y, c], i) => (
+                  <FlowerSVG key={i} x={x} y={y} color={c} />
                 ))}
 
-                {/* ── Dirt path – uses dynamic pathD ── */}
+                {/* Dirt path */}
                 <path
                   d={pathD}
                   fill="none"
@@ -525,7 +820,7 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
                   strokeLinejoin="round"
                 />
 
-                {/* Stone platforms */}
+                {/* Platforms */}
                 {levels.map((level) => (
                   <PlatformSVG
                     key={level.id}
@@ -534,28 +829,52 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
                     done={level.stars > 0}
                     active={currentLevel?.id === level.id}
                     locked={level.stars === -1}
+                    charNearby={charIsOnNode && nearestLevel?.id === level.id}
                   />
                 ))}
 
+                {/* Trees on top of everything */}
                 {TREES.map(([x, y, s], i) => (
                   <TreeSVG key={i} x={x} y={y} s={s} />
                 ))}
               </svg>
 
-              {/* ── React HTML overlay ── */}
+              {/* ── HTML overlay: node labels ── */}
               {levels.map((level) => (
                 <LevelNode
                   key={level.id}
                   level={level}
                   isCurrent={currentLevel?.id === level.id}
+                  charIsHere={charIsOnNode && nearestLevel?.id === level.id}
                 />
               ))}
+
+              {/* ── Pixel character ── */}
+              {S.length > 0 && (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: charPos.x,
+                    top: charPos.y + CHARACTER_Y_OFFSET,
+                    // translateX(-50%) centering is baked into the animation so it doesn't get lost
+                    animation: walking
+                      ? "charBob 0.3s ease-in-out infinite"
+                      : "charIdle 1.8s ease-in-out infinite",
+                    pointerEvents: "none",
+                    zIndex: 20,
+                    willChange: "transform",
+                  }}
+                >
+                  <PixelCharacter facingLeft={facingLeft} walking={walking} />
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Right arrow */}
           <button
-            onClick={() => scrollBy(320)}
+            onClick={() =>
+              scrollRef.current?.scrollBy({ left: 320, behavior: "smooth" })
+            }
             className="shrink-0 font-pixel text-stone-200 bg-stone-700/80 dark:bg-stone-900/80 border-4 border-stone-800 rounded px-3 py-3 hover:brightness-125 active:scale-95 transition-all"
             style={{ boxShadow: "3px 3px 0 rgba(0,0,0,0.4)" }}
             aria-label="Scroll right"
@@ -564,11 +883,12 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
           </button>
         </div>
 
+        {/* Controls hint */}
         <p
           className="mt-3 font-pixel text-stone-600 dark:text-stone-400 opacity-60"
           style={{ fontSize: "8px" }}
         >
-          ← ZIEHEN ZUM SCROLLEN →
+          ← → BEWEGEN &nbsp;|&nbsp; ↵ LEVEL STARTEN
         </p>
       </div>
 
