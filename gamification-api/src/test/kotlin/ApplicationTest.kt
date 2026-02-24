@@ -21,6 +21,26 @@ class ApplicationTest {
     @Test fun testRoot() = testApplication { application { module() } }
 
     @Test
+    fun testCorsPreflightForJsonAndAuthHeaders() = testApplication {
+        application { module() }
+
+        val response =
+            client.options("/auth/login") {
+                header(HttpHeaders.Origin, "http://localhost:5173")
+                header(HttpHeaders.AccessControlRequestMethod, HttpMethod.Post.value)
+                header(HttpHeaders.AccessControlRequestHeaders, "content-type,authorization")
+            }
+
+        assertTrue(response.status.value in 200..299)
+        val allowOrigin = response.headers[HttpHeaders.AccessControlAllowOrigin]
+        assertTrue(allowOrigin == "*" || allowOrigin == "http://localhost:5173")
+
+        val allowedHeaders = response.headers[HttpHeaders.AccessControlAllowHeaders].orEmpty().lowercase()
+        assertTrue(allowedHeaders.contains("content-type"))
+        assertTrue(allowedHeaders.contains("authorization"))
+    }
+
+    @Test
     fun testRegisterAndLoginFlow() = testApplication {
         application { module() }
         val userName = "testuser-${System.currentTimeMillis()}"
@@ -141,41 +161,6 @@ class ApplicationTest {
             }?.jsonObject
         assertNotNull(updatedQuestion)
         assertTrue(updatedQuestion["completed"]!!.jsonPrimitive.boolean)
-    }
-
-    @Test
-    fun testGetCategories() = testApplication {
-        application { module() }
-        val userName = "categories-user-${System.currentTimeMillis()}"
-
-        val registerResponse =
-            client.post("/auth/register") {
-                contentType(ContentType.Application.Json)
-                setBody("""{"userName":"$userName","password":"strongpass123"}""")
-            }
-        assertEquals(HttpStatusCode.Created, registerResponse.status)
-
-        val token =
-            "\"token\":\"([^\"]+)\""
-                .toRegex()
-                .find(registerResponse.bodyAsText())
-                ?.groupValues
-                ?.get(1)
-        assertTrue(!token.isNullOrBlank())
-
-        val categoriesResponse =
-            client.get("/categories") {
-                header(HttpHeaders.Authorization, "Bearer $token")
-            }
-        assertEquals(HttpStatusCode.OK, categoriesResponse.status)
-
-        val categoriesJson = Json.parseToJsonElement(categoriesResponse.bodyAsText()).jsonArray
-        assertTrue(categoriesJson.isNotEmpty())
-
-        val firstCategory = categoriesJson.first().jsonObject
-        assertNotNull(firstCategory["categoryId"]?.jsonPrimitive?.int)
-        assertTrue(firstCategory["name"]!!.jsonPrimitive.content.isNotBlank())
-        assertNotNull(firstCategory["questionCount"]?.jsonPrimitive?.int)
     }
 
     @Test

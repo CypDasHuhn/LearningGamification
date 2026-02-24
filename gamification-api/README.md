@@ -49,12 +49,6 @@ Authenticated endpoints for question delivery and answer submission:
 
 `Authorization: Bearer <token>` is required for all `/questions` routes.
 
-## Categories API
-
-Authenticated endpoint for listing categories/themes:
-
-- `GET /categories` returns all categories from the `theme` table.
-
 ## Themes & Quiz Navigation API
 
 Authenticated endpoints for drilling down through quiz content:

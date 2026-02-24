@@ -1,4 +1,4 @@
-package dev.gamification.backend
+package dev.gamification.backend.routes
 
 import io.ktor.server.application.Application
 import io.ktor.server.plugins.openapi.openAPI

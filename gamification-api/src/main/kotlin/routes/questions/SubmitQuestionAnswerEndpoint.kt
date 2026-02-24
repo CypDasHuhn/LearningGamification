@@ -1,7 +1,7 @@
-package dev.gamification.backend.questions
+package dev.gamification.backend.routes.questions
 
-import dev.gamification.backend.auth.ErrorResponse
-import dev.gamification.backend.auth.userIdClaim
+import dev.gamification.backend.routes.auth.ErrorResponse
+import dev.gamification.backend.routes.auth.userIdClaim
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.receive

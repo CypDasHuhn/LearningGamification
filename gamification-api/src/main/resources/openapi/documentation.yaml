@@ -95,27 +95,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-  /categories:
-    get:
-      summary: Get all categories (themes)
-      operationId: getCategories
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          description: List of categories.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/CategoryResponse"
-        "401":
-          description: Missing/invalid bearer token.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
   /themes:
     get:
       summary: Get all themes
@@ -436,28 +415,6 @@ components:
         message:
           type: string
           example: Invalid credentials
-    CategoryResponse:
-      type: object
-      required:
-        - categoryId
-        - name
-        - questionCount
-      properties:
-        categoryId:
-          type: integer
-          format: int32
-          example: 1
-        name:
-          type: string
-          example: Kotlin Basics
-        description:
-          type: string
-          nullable: true
-          example: Core Kotlin concepts for backend developers.
-        questionCount:
-          type: integer
-          format: int32
-          example: 2
     ThemeResponse:
       type: object
       required:

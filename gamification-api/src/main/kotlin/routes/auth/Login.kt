@@ -1,4 +1,4 @@
-package dev.gamification.backend.auth
+package dev.gamification.backend.routes.auth
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm

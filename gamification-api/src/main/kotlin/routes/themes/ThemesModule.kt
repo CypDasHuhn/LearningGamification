@@ -1,6 +1,6 @@
-package dev.gamification.backend.themes
+package dev.gamification.backend.routes.themes
 
-import dev.gamification.backend.auth.JwtAuthName
+import dev.gamification.backend.routes.auth.JwtAuthName
 import io.ktor.server.application.Application
 import io.ktor.server.auth.authenticate
 import io.ktor.server.routing.route

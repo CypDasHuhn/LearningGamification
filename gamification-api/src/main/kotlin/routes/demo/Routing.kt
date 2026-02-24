@@ -1,4 +1,4 @@
-package dev.gamification.backend.demo
+package dev.gamification.backend.routes.demo
 
 import io.ktor.server.application.Application
 import io.ktor.server.response.respondText

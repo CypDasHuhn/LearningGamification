@@ -1,4 +1,4 @@
-package dev.gamification.backend.themes
+package dev.gamification.backend.routes.themes
 
 import kotlinx.serialization.Serializable
 

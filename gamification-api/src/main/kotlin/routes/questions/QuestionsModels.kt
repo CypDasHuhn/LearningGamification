@@ -1,4 +1,4 @@
-package dev.gamification.backend.questions
+package dev.gamification.backend.routes.questions
 
 import kotlinx.serialization.Serializable
 
