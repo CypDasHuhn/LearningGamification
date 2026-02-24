@@ -34,3 +34,8 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### SQLite ###
+kls_database.db
+kls_database.db-shm
+kls_database.db-wal
