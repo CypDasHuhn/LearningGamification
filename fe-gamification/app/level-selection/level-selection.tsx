@@ -1,8 +1,7 @@
-import {
-  buildPathSamples,
-  findClosestSampleIndex,
-  buildSvgPathD,
-} from "../components/design/positions/pathUtils";
+import { useRef, useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router";
+
+import type { Level } from "../components/types";
 import {
   MAP_WIDTH,
   MAP_HEIGHT,
@@ -10,26 +9,24 @@ import {
   CHARACTER_WALK_SPEED,
   CHARACTER_VERTICAL_OFFSET,
 } from "../components/mapConstants";
+import { generateDecorationPositions } from "../components/design/positions/mapDecorations";
 import {
-  PixelCharacter,
-  CHARACTER_KEYFRAMES,
-} from "../components/character/PixelCharacter";
-import {
-  TREE_POSITIONS,
-  ROCK_POSITIONS,
-  FLOWER_POSITIONS,
-} from "../components/design/positions/mapDecorations";
+  buildPathSamples,
+  findClosestSampleIndex,
+  buildSvgPathD,
+} from "../components/design/positions/pathUtils";
 import {
   TreeSVG,
   RockSVG,
   FlowerSVG,
   RiverSVG,
 } from "../components/design/structures/MapDecorationsSVG";
-import { LevelNode } from "../components/design/structures/LevelNode";
-import { Link, useNavigate } from "react-router";
 import { PlatformSVG } from "../components/design/structures/PlatformSVG";
-import { useRef, useState, useEffect } from "react";
-import type { Level } from "../components/types";
+import { LevelNode } from "../components/design/structures/LevelNode";
+import {
+  PixelCharacter,
+  CHARACTER_KEYFRAMES,
+} from "../components/character/PixelCharacter";
 
 export type { Level };
 
@@ -45,6 +42,11 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
     pathSamples.current = buildPathSamples(levels, 150);
   }
   const samples = pathSamples.current;
+
+  const decorations = useRef<ReturnType<typeof generateDecorationPositions>>(
+    generateDecorationPositions(levels),
+  );
+  const { trees, rocks, flowers } = decorations.current;
 
   const lastUnlockedLevelIndex = levels.reduce(
     (lastIndex, level, index) => (level.stars !== -1 ? index : lastIndex),
@@ -72,7 +74,7 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
     y: levels[0]?.y ?? 0,
   };
 
-  const nearestLevelToCharacter = levels.reduce(
+  const nearestLevelToCharacter = levels.reduce<Level>(
     (nearest, level) =>
       Math.abs(level.x - characterPosition.x) <
       Math.abs(nearest.x - characterPosition.x)
@@ -159,7 +161,7 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
       if (event.key === "Enter") {
         const currentPosition = samples[characterSampleIndexRef.current];
         if (!currentPosition) return;
-        const nearestLevel = levels.reduce(
+        const nearestLevel = levels.reduce<Level>(
           (nearest, level) =>
             Math.abs(level.x - currentPosition.x) <
             Math.abs(nearest.x - currentPosition.x)
@@ -190,7 +192,7 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
     };
   }, [levels, navigate, samples]);
 
-  function onMouseDown(event: React.MouseEvent) {
+  function onMouseDown(event: React.MouseEvent<HTMLDivElement>) {
     dragState.current = {
       active: true,
       startX: event.pageX - (scrollContainerRef.current?.offsetLeft ?? 0),
@@ -200,7 +202,7 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
       scrollContainerRef.current.style.cursor = "grabbing";
   }
 
-  function onMouseMove(event: React.MouseEvent) {
+  function onMouseMove(event: React.MouseEvent<HTMLDivElement>) {
     if (!dragState.current.active || !scrollContainerRef.current) return;
     event.preventDefault();
     const currentX = event.pageX - scrollContainerRef.current.offsetLeft;
@@ -251,7 +253,7 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
             style={{ boxShadow: "3px 3px 0 rgba(0,0,0,0.4)" }}
             aria-label="Scroll left"
           >
-            ←
+            ◀
           </button>
 
           <div
@@ -300,11 +302,21 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
 
                 <RiverSVG />
 
-                {ROCK_POSITIONS.map(([x, y, scale], index) => (
-                  <RockSVG key={index} x={x} y={y} scale={scale} />
+                {rocks.map((rock, index) => (
+                  <RockSVG
+                    key={index}
+                    x={rock.x}
+                    y={rock.y}
+                    scale={rock.scale}
+                  />
                 ))}
-                {FLOWER_POSITIONS.map(([x, y, color], index) => (
-                  <FlowerSVG key={index} x={x} y={y} color={color} />
+                {flowers.map((flower, index) => (
+                  <FlowerSVG
+                    key={index}
+                    x={flower.x}
+                    y={flower.y}
+                    color={flower.color}
+                  />
                 ))}
 
                 <path
@@ -347,8 +359,13 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
                   />
                 ))}
 
-                {TREE_POSITIONS.map(([x, y, scale], index) => (
-                  <TreeSVG key={index} x={x} y={y} scale={scale} />
+                {trees.map((tree, index) => (
+                  <TreeSVG
+                    key={index}
+                    x={tree.x}
+                    y={tree.y}
+                    scale={tree.scale}
+                  />
                 ))}
               </svg>
 
@@ -398,7 +415,7 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
             style={{ boxShadow: "3px 3px 0 rgba(0,0,0,0.4)" }}
             aria-label="Scroll right"
           >
-            →
+            ▶
           </button>
         </div>
 
