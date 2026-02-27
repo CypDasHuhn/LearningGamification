@@ -4,6 +4,7 @@ import dev.gamification.backend.db.configureDatabases
 import dev.gamification.backend.routes.configureOpenApi
 import dev.gamification.backend.routes.auth.configureAuth
 import dev.gamification.backend.routes.demo.configureRouting
+import dev.gamification.backend.routes.leaderboard.configureLeaderboard
 import dev.gamification.backend.routes.questions.configureQuestionSets
 import dev.gamification.backend.routes.questions.configureQuestions
 import dev.gamification.backend.routes.themes.configureThemes
@@ -28,5 +29,6 @@ fun Application.module() {
     configureThemes()
     configureQuestionSets()
     configureQuestions()
+    configureLeaderboard()
     configureRouting()
 }
