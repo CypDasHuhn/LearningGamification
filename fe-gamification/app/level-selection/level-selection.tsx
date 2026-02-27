@@ -218,7 +218,7 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
   }
 
   return (
-    <main className="min-h-screen flex flex-col bg-linear-to-b from-sky-300 via-amber-100 to-emerald-200 dark:from-slate-900 dark:via-amber-950/30 dark:to-slate-900">
+    <main className="min-h-screen flex flex-col bg-linear-to-b from-sky-300 via-amber-100 to-emerald-200">
       <style>{CHARACTER_KEYFRAMES}</style>
 
       <header className="flex items-center justify-between px-4 sm:px-8 py-4">
@@ -253,7 +253,7 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
             style={{ boxShadow: "3px 3px 0 rgba(0,0,0,0.4)" }}
             aria-label="Scroll left"
           >
-            ←
+            ◀
           </button>
 
           <div
@@ -415,7 +415,7 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
             style={{ boxShadow: "3px 3px 0 rgba(0,0,0,0.4)" }}
             aria-label="Scroll right"
           >
-            →
+            ▶
           </button>
         </div>
 

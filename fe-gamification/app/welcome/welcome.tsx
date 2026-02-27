@@ -28,7 +28,7 @@ export function Welcome() {
   const splash = randomSplash();
 
   return (
-    <main className="min-h-screen flex flex-col bg-linear-to-b from-sky-300 via-amber-100 to-emerald-200 dark:from-slate-900 dark:via-amber-950/30 dark:to-slate-900">
+    <main className="min-h-screen flex flex-col bg-linear-to-b from-sky-300 via-amber-100 to-emerald-200">
       {/* Splash-Text oben rechts */}
       <div
         className="absolute top-8 right-8 md:top-12 md:right-12 text-amber-600 dark:text-amber-400 font-pixel text-sm md:text-base transform rotate-12 drop-shadow-md select-none"

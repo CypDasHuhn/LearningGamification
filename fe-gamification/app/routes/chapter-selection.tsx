@@ -122,7 +122,9 @@ function NodeCircle({
 
 export default function ChapterSelection() {
   const navigate = useNavigate();
-  const [activeChapter, setActiveChapter] = useState<ChapterId>(CHAPTERS[0].chapter);
+  const [activeChapter, setActiveChapter] = useState<ChapterId>(
+    CHAPTERS[0].chapter,
+  );
   const mapRef = useRef<HTMLDivElement>(null);
 
   const handleKeyDown = useCallback(
@@ -138,8 +140,7 @@ export default function ChapterSelection() {
         e.preventDefault();
         setActiveChapter((prev) => {
           const idx = CHAPTERS.findIndex((c) => c.chapter === prev);
-          const next =
-            CHAPTERS[(idx - 1 + CHAPTERS.length) % CHAPTERS.length];
+          const next = CHAPTERS[(idx - 1 + CHAPTERS.length) % CHAPTERS.length];
           return next.chapter;
         });
       } else if (e.key === "Enter") {
@@ -154,10 +155,11 @@ export default function ChapterSelection() {
     mapRef.current?.focus();
   }, []);
 
-  const currentNode = CHAPTERS.find((c) => c.chapter === activeChapter) ?? CHAPTERS[0];
+  const currentNode =
+    CHAPTERS.find((c) => c.chapter === activeChapter) ?? CHAPTERS[0];
 
   return (
-    <div className="min-h-screen flex flex-col bg-linear-to-b from-sky-300 via-emerald-200 to-emerald-500 dark:from-slate-900 dark:via-emerald-950/40 dark:to-slate-900">
+    <div className="min-h-screen flex flex-col bg-linear-to-b from-sky-300 via-emerald-200 to-emerald-500 ">
       <IngameHeader siteName="Chapter Selection" />
 
       <div className="flex-1 flex justify-center items-center min-h-0 p-4">
@@ -224,29 +226,34 @@ export default function ChapterSelection() {
               strokeLinejoin="round"
             />
 
-            {[{ x: 28, y: 18 }, { x: 12, y: 52 }, { x: 64, y: 80 }, { x: 90, y: 60 }].map(
-              (t, i) => (
-                <g key={i}>
-                  <circle cx={t.x} cy={t.y} r={4.2} fill="#14532d" />
-                  <circle cx={t.x - 2} cy={t.y - 2} r={3.1} fill="#15803d" />
-                  <circle cx={t.x + 1.5} cy={t.y + 1.2} r={2.7} fill="#16a34a" />
-                </g>
-              ),
-            )}
-            {[{ x: 40, y: 60 }, { x: 70, y: 20 }, { x: 84, y: 46 }].map(
-              (r, i) => (
-                <g key={i} opacity="0.9">
-                  <ellipse
-                    cx={r.x + 1}
-                    cy={r.y + 1.5}
-                    rx="3.8"
-                    ry="2.4"
-                    fill="rgba(0,0,0,0.25)"
-                  />
-                  <ellipse cx={r.x} cy={r.y} rx="3.8" ry="2.4" fill="#737373" />
-                </g>
-              ),
-            )}
+            {[
+              { x: 28, y: 18 },
+              { x: 12, y: 52 },
+              { x: 64, y: 80 },
+              { x: 90, y: 60 },
+            ].map((t, i) => (
+              <g key={i}>
+                <circle cx={t.x} cy={t.y} r={4.2} fill="#14532d" />
+                <circle cx={t.x - 2} cy={t.y - 2} r={3.1} fill="#15803d" />
+                <circle cx={t.x + 1.5} cy={t.y + 1.2} r={2.7} fill="#16a34a" />
+              </g>
+            ))}
+            {[
+              { x: 40, y: 60 },
+              { x: 70, y: 20 },
+              { x: 84, y: 46 },
+            ].map((r, i) => (
+              <g key={i} opacity="0.9">
+                <ellipse
+                  cx={r.x + 1}
+                  cy={r.y + 1.5}
+                  rx="3.8"
+                  ry="2.4"
+                  fill="rgba(0,0,0,0.25)"
+                />
+                <ellipse cx={r.x} cy={r.y} rx="3.8" ry="2.4" fill="#737373" />
+              </g>
+            ))}
           </svg>
 
           <div className="absolute inset-0">
