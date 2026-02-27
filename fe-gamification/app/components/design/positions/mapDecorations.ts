@@ -1,0 +1,326 @@
+import type { Level } from "../../types";
+import { MAP_WIDTH, MAP_HEIGHT, NODE_RADIUS } from "../../mapConstants";
+import { buildPathSamples, type PathSample } from "./pathUtils";
+
+export type TreePosition = { x: number; y: number; scale: number };
+export type RockPosition = { x: number; y: number; scale: number };
+export type FlowerPosition = { x: number; y: number; color: string };
+
+export type DecorationPositions = {
+  trees: TreePosition[];
+  rocks: RockPosition[];
+  flowers: FlowerPosition[];
+};
+
+const FLOWER_COLORS = [
+  "#f87171",
+  "#f472b6",
+  "#fb923c",
+  "#a78bfa",
+  "#fbbf24",
+  "#38bdf8",
+  "#4ade80",
+];
+
+const PLACEMENT_CONFIG = {
+  tree: {
+    count: 55,
+    minScale: 0.72,
+    maxScale: 1.15,
+    clearanceFromPath: 52,
+    clearanceFromNode: 70,
+    clearanceFromSelf: 30,
+  },
+  rock: {
+    count: 10,
+    minScale: 0.7,
+    maxScale: 1.0,
+    clearanceFromPath: 40,
+    clearanceFromNode: 60,
+    clearanceFromSelf: 50,
+  },
+  flower: {
+    count: 18,
+    clearanceFromPath: 30,
+    clearanceFromNode: 55,
+    clearanceFromSelf: 40,
+  },
+};
+
+type RiverBand = { topY: number; bottomY: number };
+
+function cubicBezierY(
+  t: number,
+  y0: number,
+  y1: number,
+  y2: number,
+  y3: number,
+): number {
+  const mt = 1 - t;
+  return (
+    mt * mt * mt * y0 +
+    3 * mt * mt * t * y1 +
+    3 * mt * t * t * y2 +
+    t * t * t * y3
+  );
+}
+
+function cubicBezierX(
+  t: number,
+  x0: number,
+  x1: number,
+  x2: number,
+  x3: number,
+): number {
+  const mt = 1 - t;
+  return (
+    mt * mt * mt * x0 +
+    3 * mt * mt * t * x1 +
+    3 * mt * t * t * x2 +
+    t * t * t * x3
+  );
+}
+
+/**
+ * Samples the river's outer SVG path at SAMPLE_COUNT x-positions and records
+ * the top and bottom Y for each. The river path is a closed cubic bezier shape:
+ *
+ *   Top edge:    M -5,33  C 110,20  240,70  405,54
+ *                         C 570,38  710,78  900,62
+ *                         C 1090,46 1230,84 1410,67
+ *                         C 1590,50 1710,74 1845,60
+ *
+ *   Bottom edge: L 1845,108 C 1710,122 1590,98  1410,115
+ *                            C 1230,132 1090,94  900,110
+ *                            C 710,126  570,86   405,102
+ *                            C 240,118  110,68   -5,85
+ */
+const RIVER_TOP_SEGMENTS: [
+  x0: number,
+  y0: number,
+  cx1: number,
+  cy1: number,
+  cx2: number,
+  cy2: number,
+  x3: number,
+  y3: number,
+][] = [
+  [-5, 33, 110, 20, 240, 70, 405, 54],
+  [405, 54, 570, 38, 710, 78, 900, 62],
+  [900, 62, 1090, 46, 1230, 84, 1410, 67],
+  [1410, 67, 1590, 50, 1710, 74, 1845, 60],
+];
+
+const RIVER_BOTTOM_SEGMENTS: [
+  x0: number,
+  y0: number,
+  cx1: number,
+  cy1: number,
+  cx2: number,
+  cy2: number,
+  x3: number,
+  y3: number,
+][] = [
+  [1845, 108, 1710, 122, 1590, 98, 1410, 115],
+  [1410, 115, 1230, 132, 1090, 94, 900, 110],
+  [900, 110, 710, 126, 570, 86, 405, 102],
+  [405, 102, 240, 118, 110, 68, -5, 85],
+];
+
+function sampleRiverEdge(
+  segments: typeof RIVER_TOP_SEGMENTS,
+  targetX: number,
+): number {
+  let bestY = 0;
+  let bestDist = Infinity;
+  const steps = 60;
+
+  for (const [x0, y0, cx1, cy1, cx2, cy2, x3, y3] of segments) {
+    for (let step = 0; step <= steps; step++) {
+      const t = step / steps;
+      const sampleX = cubicBezierX(t, x0, cx1, cx2, x3);
+      const dist = Math.abs(sampleX - targetX);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestY = cubicBezierY(t, y0, cy1, cy2, y3);
+      }
+    }
+  }
+
+  return bestY;
+}
+
+const RIVER_SAMPLE_COUNT = 200;
+const RIVER_PADDING = 8;
+
+const riverBands: RiverBand[] = (() => {
+  const bands: RiverBand[] = [];
+  for (let i = 0; i <= RIVER_SAMPLE_COUNT; i++) {
+    const x = (i / RIVER_SAMPLE_COUNT) * MAP_WIDTH;
+    const topY = sampleRiverEdge(RIVER_TOP_SEGMENTS, x) - RIVER_PADDING;
+    const bottomY = sampleRiverEdge(RIVER_BOTTOM_SEGMENTS, x) + RIVER_PADDING;
+    bands.push({ topY, bottomY });
+  }
+  return bands;
+})();
+
+function isInsideRiver(x: number, y: number): boolean {
+  const bandIndex = Math.round((x / MAP_WIDTH) * RIVER_SAMPLE_COUNT);
+  const clampedIndex = Math.max(0, Math.min(RIVER_SAMPLE_COUNT, bandIndex));
+  const band = riverBands[clampedIndex];
+  if (!band) return false;
+  return y >= band.topY && y <= band.bottomY;
+}
+
+function seededRandom(seed: number) {
+  let value = seed;
+  return function next() {
+    value = (value * 1664525 + 1013904223) & 0xffffffff;
+    return (value >>> 0) / 0xffffffff;
+  };
+}
+
+function distanceBetween(
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+): number {
+  const dx = ax - bx;
+  const dy = ay - by;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function isTooCloseToPath(
+  x: number,
+  y: number,
+  pathSamples: PathSample[],
+  minDistance: number,
+): boolean {
+  for (const sample of pathSamples) {
+    if (distanceBetween(x, y, sample.x, sample.y) < minDistance) return true;
+  }
+  return false;
+}
+
+function isTooCloseToAnyLevel(
+  x: number,
+  y: number,
+  levels: Level[],
+  minDistance: number,
+): boolean {
+  for (const level of levels) {
+    if (distanceBetween(x, y, level.x, level.y) < minDistance) return true;
+  }
+  return false;
+}
+
+function isTooCloseToPlaced(
+  x: number,
+  y: number,
+  placed: { x: number; y: number }[],
+  minDistance: number,
+): boolean {
+  for (const other of placed) {
+    if (distanceBetween(x, y, other.x, other.y) < minDistance) return true;
+  }
+  return false;
+}
+
+function tryPlacePoint(
+  random: () => number,
+  pathSamples: PathSample[],
+  levels: Level[],
+  placed: { x: number; y: number }[],
+  clearanceFromPath: number,
+  clearanceFromNode: number,
+  clearanceFromSelf: number,
+  maxAttempts = 120,
+): { x: number; y: number } | null {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const x = Math.round(random() * (MAP_WIDTH - 40) + 20);
+    const y = Math.round(random() * (MAP_HEIGHT - 40) + 20);
+
+    if (isInsideRiver(x, y)) continue;
+    if (isTooCloseToPath(x, y, pathSamples, clearanceFromPath)) continue;
+    if (isTooCloseToAnyLevel(x, y, levels, clearanceFromNode + NODE_RADIUS))
+      continue;
+    if (isTooCloseToPlaced(x, y, placed, clearanceFromSelf)) continue;
+
+    return { x, y };
+  }
+  return null;
+}
+
+export function generateDecorationPositions(
+  levels: Level[],
+  seed = 42,
+): DecorationPositions {
+  const random = seededRandom(seed);
+  const pathSamples = buildPathSamples(levels, 80);
+
+  const allPlaced: { x: number; y: number }[] = [];
+  const trees: TreePosition[] = [];
+  const rocks: RockPosition[] = [];
+  const flowers: FlowerPosition[] = [];
+
+  const { tree, rock, flower } = PLACEMENT_CONFIG;
+
+  for (let i = 0; i < tree.count; i++) {
+    const point = tryPlacePoint(
+      random,
+      pathSamples,
+      levels,
+      allPlaced,
+      tree.clearanceFromPath,
+      tree.clearanceFromNode,
+      tree.clearanceFromSelf,
+    );
+    if (!point) continue;
+    const scale = tree.minScale + random() * (tree.maxScale - tree.minScale);
+    trees.push({
+      x: point.x,
+      y: point.y,
+      scale: Math.round(scale * 100) / 100,
+    });
+    allPlaced.push(point);
+  }
+
+  for (let i = 0; i < rock.count; i++) {
+    const point = tryPlacePoint(
+      random,
+      pathSamples,
+      levels,
+      allPlaced,
+      rock.clearanceFromPath,
+      rock.clearanceFromNode,
+      rock.clearanceFromSelf,
+    );
+    if (!point) continue;
+    const scale = rock.minScale + random() * (rock.maxScale - rock.minScale);
+    rocks.push({
+      x: point.x,
+      y: point.y,
+      scale: Math.round(scale * 100) / 100,
+    });
+    allPlaced.push(point);
+  }
+
+  for (let i = 0; i < flower.count; i++) {
+    const point = tryPlacePoint(
+      random,
+      pathSamples,
+      levels,
+      allPlaced,
+      flower.clearanceFromPath,
+      flower.clearanceFromNode,
+      flower.clearanceFromSelf,
+    );
+    if (!point) continue;
+    const color = FLOWER_COLORS[Math.floor(random() * FLOWER_COLORS.length)];
+    flowers.push({ x: point.x, y: point.y, color });
+    allPlaced.push(point);
+  }
+
+  return { trees, rocks, flowers };
+}
