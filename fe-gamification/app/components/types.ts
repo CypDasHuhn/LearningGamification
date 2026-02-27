@@ -4,4 +4,5 @@ export type Level = {
   y: number;
   stars: number;
   title: string;
+  questionType: "multiple-choice" | "true-false" | "gap-fill";
 };
