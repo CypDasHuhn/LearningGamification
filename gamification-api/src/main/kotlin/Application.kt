@@ -1,8 +1,12 @@
 package dev.gamification.backend
 
-import dev.gamification.backend.auth.configureAuth
 import dev.gamification.backend.db.configureDatabases
-import dev.gamification.backend.demo.configureRouting
+import dev.gamification.backend.routes.configureOpenApi
+import dev.gamification.backend.routes.auth.configureAuth
+import dev.gamification.backend.routes.demo.configureRouting
+import dev.gamification.backend.routes.questions.configureQuestionSets
+import dev.gamification.backend.routes.questions.configureQuestions
+import dev.gamification.backend.routes.themes.configureThemes
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.*
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -19,6 +23,10 @@ fun Application.module() {
         json()
     }
     configureDatabases()
+    configureOpenApi()
     configureAuth()
+    configureThemes()
+    configureQuestionSets()
+    configureQuestions()
     configureRouting()
 }

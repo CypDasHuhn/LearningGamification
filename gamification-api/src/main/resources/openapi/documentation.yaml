@@ -1,0 +1,682 @@
+openapi: 3.0.3
+info:
+  title: Learning Gamification API
+  version: 1.0.0
+  description: OpenAPI documentation for the currently implemented routes.
+servers:
+  - url: http://localhost:8080
+paths:
+  /:
+    get:
+      summary: Health/root endpoint
+      operationId: getRoot
+      responses:
+        "200":
+          description: Returns a simple status text.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Hello World!
+  /auth/register:
+    post:
+      summary: Register a new user
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthRequest"
+      responses:
+        "201":
+          description: User created and logged in.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Invalid request payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Username already exists.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/login:
+    post:
+      summary: Login with username and password
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthRequest"
+      responses:
+        "200":
+          description: Successful login.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Invalid request payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Invalid credentials.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/me:
+    get:
+      summary: Get the currently authenticated user
+      operationId: getMe
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Authenticated user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "401":
+          description: Missing/invalid bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /themes:
+    get:
+      summary: Get all themes
+      operationId: getThemes
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of themes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ThemeResponse"
+        "401":
+          description: Missing/invalid bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /themes/{themeId}/question-sets:
+    get:
+      summary: Get question sets for a theme
+      operationId: getThemeQuestionSets
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: themeId
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Question sets linked to the theme.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ThemeQuestionSetResponse"
+        "400":
+          description: Invalid theme id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing/invalid bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Theme not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /question-sets/{questionSetId}/questions:
+    get:
+      summary: Get questions for a question set
+      operationId: getQuestionSetQuestions
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: questionSetId
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Questions in the question set.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QuestionSummaryResponse"
+        "400":
+          description: Invalid question set id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing/invalid bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Question set not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /questions:
+    get:
+      summary: Get questions for the authenticated user
+      operationId: getQuestions
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: questionSetId
+          schema:
+            type: integer
+            format: int32
+          required: false
+          description: Optional filter for a specific question set.
+      responses:
+        "200":
+          description: Questions with answer payloads and completion state.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QuestionResponse"
+        "400":
+          description: Invalid query parameter.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing/invalid bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /questions/{questionId}/answers:
+    get:
+      summary: Get all possible answers for a question
+      operationId: getQuestionAnswers
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: questionId
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Possible answer options for the question.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestionAnswersResponse"
+        "400":
+          description: Invalid question id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing/invalid bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Question not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /questions/{questionId}/answer:
+    post:
+      summary: Submit an answer for a question
+      operationId: answerQuestion
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: questionId
+          required: true
+          schema:
+            type: integer
+            format: int32
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitAnswerRequest"
+      responses:
+        "200":
+          description: Submission evaluated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubmitAnswerResponse"
+        "400":
+          description: Invalid payload or answer selection.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing/invalid bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Question not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /questions/{questionId}/submit:
+    post:
+      summary: Submit an answer for a question
+      operationId: submitQuestionAnswer
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: questionId
+          required: true
+          schema:
+            type: integer
+            format: int32
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitAnswerRequest"
+      responses:
+        "200":
+          description: Submission evaluated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubmitAnswerResponse"
+        "400":
+          description: Invalid payload or answer selection.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing/invalid bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Question not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    AuthRequest:
+      type: object
+      required:
+        - userName
+        - password
+      properties:
+        userName:
+          type: string
+          example: testuser
+        password:
+          type: string
+          minLength: 8
+          example: strongpass123
+    AuthResponse:
+      type: object
+      required:
+        - token
+        - userId
+        - userName
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        userId:
+          type: integer
+          format: int32
+          example: 1
+        userName:
+          type: string
+          example: testuser
+    UserResponse:
+      type: object
+      required:
+        - userId
+        - userName
+      properties:
+        userId:
+          type: integer
+          format: int32
+          example: 1
+        userName:
+          type: string
+          example: testuser
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: Invalid credentials
+    ThemeResponse:
+      type: object
+      required:
+        - themeId
+        - name
+        - questionCount
+      properties:
+        themeId:
+          type: integer
+          format: int32
+          example: 1
+        name:
+          type: string
+          example: Kotlin Basics
+        description:
+          type: string
+          nullable: true
+          example: Core Kotlin concepts for backend developers.
+        questionCount:
+          type: integer
+          format: int32
+          example: 2
+    ThemeQuestionSetResponse:
+      type: object
+      required:
+        - questionSetId
+        - title
+        - teamId
+        - questionCount
+      properties:
+        questionSetId:
+          type: integer
+          format: int32
+          example: 1
+        title:
+          type: string
+          example: Backend Fundamentals
+        teamId:
+          type: integer
+          format: int32
+          example: 1
+        questionCount:
+          type: integer
+          format: int32
+          example: 2
+    QuestionSummaryResponse:
+      type: object
+      required:
+        - questionId
+        - questionType
+        - allowsMultiple
+        - completed
+      properties:
+        questionId:
+          type: integer
+          format: int32
+          example: 1
+        questionType:
+          type: string
+          enum: [MC, TF, GAP]
+        startText:
+          type: string
+          nullable: true
+          example: What does JVM stand for?
+        imageUrl:
+          type: string
+          nullable: true
+        endText:
+          type: string
+          nullable: true
+        allowsMultiple:
+          type: boolean
+          example: false
+        completed:
+          type: boolean
+          example: false
+    QuestionResponse:
+      type: object
+      required:
+        - questionId
+        - questionSetId
+        - questionType
+        - allowsMultiple
+        - completed
+        - mcAnswers
+        - gapFields
+      properties:
+        questionId:
+          type: integer
+          format: int32
+          example: 1
+        questionSetId:
+          type: integer
+          format: int32
+          example: 1
+        questionType:
+          type: string
+          enum: [MC, TF, GAP]
+        startText:
+          type: string
+          nullable: true
+          example: What does JVM stand for?
+        imageUrl:
+          type: string
+          nullable: true
+        endText:
+          type: string
+          nullable: true
+        allowsMultiple:
+          type: boolean
+          example: false
+        completed:
+          type: boolean
+          example: false
+        mcAnswers:
+          type: array
+          items:
+            $ref: "#/components/schemas/McAnswerResponse"
+        gapFields:
+          type: array
+          items:
+            $ref: "#/components/schemas/GapFieldResponse"
+    QuestionAnswersResponse:
+      type: object
+      required:
+        - questionId
+        - questionType
+        - allowsMultiple
+        - mcAnswers
+        - gapFields
+      properties:
+        questionId:
+          type: integer
+          format: int32
+          example: 1
+        questionType:
+          type: string
+          enum: [MC, TF, GAP]
+        allowsMultiple:
+          type: boolean
+          example: false
+        mcAnswers:
+          type: array
+          items:
+            $ref: "#/components/schemas/McAnswerResponse"
+        gapFields:
+          type: array
+          items:
+            $ref: "#/components/schemas/GapFieldResponse"
+    McAnswerResponse:
+      type: object
+      required:
+        - answerId
+        - optionText
+        - optionOrder
+      properties:
+        answerId:
+          type: integer
+          format: int32
+          example: 1
+        optionText:
+          type: string
+          example: Java Virtual Machine
+        optionOrder:
+          type: integer
+          format: int32
+          example: 1
+    GapFieldResponse:
+      type: object
+      required:
+        - gapId
+        - gapIndex
+        - inputType
+        - options
+      properties:
+        gapId:
+          type: integer
+          format: int32
+          example: 1
+        gapIndex:
+          type: integer
+          format: int32
+          example: 0
+        inputType:
+          type: string
+          enum: [FREE_TEXT, CHOICE]
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/GapOptionResponse"
+    GapOptionResponse:
+      type: object
+      required:
+        - gapOptionId
+        - optionText
+        - optionOrder
+      properties:
+        gapOptionId:
+          type: integer
+          format: int32
+          example: 1
+        optionText:
+          type: string
+          example: Kotlin
+        optionOrder:
+          type: integer
+          format: int32
+          example: 1
+    SubmitAnswerRequest:
+      type: object
+      properties:
+        selectedAnswerIds:
+          type: array
+          items:
+            type: integer
+            format: int32
+          example: [1]
+        gapAnswers:
+          type: array
+          items:
+            $ref: "#/components/schemas/GapAnswerInput"
+    GapAnswerInput:
+      type: object
+      required:
+        - gapId
+      properties:
+        gapId:
+          type: integer
+          format: int32
+          example: 1
+        text:
+          type: string
+          nullable: true
+          example: Kotlin
+        selectedOptionId:
+          type: integer
+          format: int32
+          nullable: true
+          example: 1
+    SubmitAnswerResponse:
+      type: object
+      required:
+        - questionId
+        - questionType
+        - isCorrect
+        - awardedPoints
+        - completed
+      properties:
+        questionId:
+          type: integer
+          format: int32
+          example: 1
+        questionType:
+          type: string
+          enum: [MC, TF, GAP]
+        isCorrect:
+          type: boolean
+          example: true
+        awardedPoints:
+          type: integer
+          format: int32
+          example: 10
+        completed:
+          type: boolean
+          example: true

@@ -4,3 +4,9 @@ ktor:
       - dev.gamification.backend.ApplicationKt.module
   deployment:
     port: 8080
+app:
+  seed:
+    enabled: true
+  auth:
+    jwt:
+      secret: dev-only-secret-change-me
