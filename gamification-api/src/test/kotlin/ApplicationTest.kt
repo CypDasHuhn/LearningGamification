@@ -239,13 +239,8 @@ class ApplicationTest {
                     answers["gapFields"]!!.jsonArray.joinToString(separator = ",") { gapFieldElement ->
                         val gapField = gapFieldElement.jsonObject
                         val gapId = gapField["gapId"]!!.jsonPrimitive.int
-                        val inputType = gapField["inputType"]!!.jsonPrimitive.content
-                        if (inputType == "CHOICE") {
-                            val optionId = gapField["options"]!!.jsonArray.first().jsonObject["gapOptionId"]!!.jsonPrimitive.int
-                            """{"gapId":$gapId,"selectedOptionId":$optionId}"""
-                        } else {
-                            """{"gapId":$gapId,"text":"sample"}"""
-                        }
+                        val optionId = gapField["options"]!!.jsonArray.first().jsonObject["gapOptionId"]!!.jsonPrimitive.int
+                        """{"gapId":$gapId,"selectedOptionId":$optionId}"""
                     }
                 """{"gapAnswers":[$gapAnswersJson]}"""
             }

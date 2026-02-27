@@ -3,11 +3,6 @@ package dev.gamification.backend.db
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.ReferenceOption
 
-enum class GapInputType {
-    FREE_TEXT,
-    CHOICE,
-}
-
 object GapFields : IntIdTable(name = "gap_field", columnName = "gap_id") {
     val questionId = reference(
         name = "question_id",
@@ -16,9 +11,8 @@ object GapFields : IntIdTable(name = "gap_field", columnName = "gap_id") {
         onUpdate = ReferenceOption.CASCADE,
     )
     val gapIndex = integer("gap_index")
-    val inputType = enumerationByName("input_type", 16, GapInputType::class).default(GapInputType.FREE_TEXT)
-    val correctText = text("correct_text").nullable()
-    val caseSensitive = bool("case_sensitive").default(false)
+    val textBefore = text("text_before").nullable()
+    val textAfter = text("text_after").nullable()
 
     init {
         index(customIndexName = "uq_gap_field_question_index", isUnique = true, questionId, gapIndex)
