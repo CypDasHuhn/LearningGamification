@@ -18,16 +18,23 @@ fun Route.registerGetLeaderboardEndpoint() {
         val limitRaw = call.request.queryParameters["limit"]
         val limit =
             when {
-                limitRaw == null -> null
+                limitRaw == null -> {
+                    null
+                }
+
                 limitRaw.toIntOrNull() == null -> {
                     call.respond(HttpStatusCode.BadRequest, ErrorResponse("limit must be an integer"))
                     return@get
                 }
+
                 limitRaw.toInt() <= 0 -> {
                     call.respond(HttpStatusCode.BadRequest, ErrorResponse("limit must be greater than 0"))
                     return@get
                 }
-                else -> limitRaw.toInt()
+
+                else -> {
+                    limitRaw.toInt()
+                }
             }
 
         call.respond(getLeaderboard(userId, limit))
