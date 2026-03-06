@@ -1,6 +1,20 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, redirect } from "react-router";
 import { IngameHeader } from "~/components/ingame-header";
+import {
+  parseAuthFromCookieHeader,
+  isGuestFromCookieHeader,
+} from "~/lib/auth-cookies";
+
+export async function loader({ request }: { request: Request }) {
+  const cookieHeader = request.headers.get("Cookie");
+  const hasAuth = parseAuthFromCookieHeader(cookieHeader) !== null;
+  const isGuest = isGuestFromCookieHeader(cookieHeader);
+  if (!hasAuth && !isGuest) {
+    return redirect("/");
+  }
+  return null;
+}
 
 const CHAPTERS = [
   {

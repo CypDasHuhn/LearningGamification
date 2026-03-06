@@ -21,6 +21,7 @@ type TrueFalseQuestionProps = {
   totalQuestions: number;
   data: TrueFalseQuestion;
   onAnswer: (isCorrect: boolean) => void;
+  onSubmit?: (selectedIsTrue: boolean) => void;
   onLeave?: () => void;
 };
 
@@ -30,6 +31,7 @@ export function TrueFalseQuestion({
   totalQuestions,
   data,
   onAnswer,
+  onSubmit,
   onLeave,
 }: TrueFalseQuestionProps) {
   const [answer, setAnswer] = useState<boolean | null>(null);
@@ -40,6 +42,7 @@ export function TrueFalseQuestion({
   function handleAnswer(value: boolean) {
     if (revealed) return;
     setAnswer(value);
+    onSubmit?.(value);
     onAnswer(value === data.correctAnswer);
   }
 
@@ -94,6 +97,8 @@ export function TrueFalseQuestion({
               {data.statement}
             </p>
           </div>
+
+          {/* WAHR / FALSCH buttons */}
           <div
             style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}
           >

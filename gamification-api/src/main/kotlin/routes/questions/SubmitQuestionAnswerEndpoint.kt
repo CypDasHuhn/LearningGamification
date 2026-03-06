@@ -10,10 +10,6 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 
 fun Route.registerSubmitQuestionEndpoint() {
-    post("/{questionId}/answer") {
-        call.handleSubmitQuestionAnswer()
-    }
-
     post("/{questionId}/submit") {
         call.handleSubmitQuestionAnswer()
     }

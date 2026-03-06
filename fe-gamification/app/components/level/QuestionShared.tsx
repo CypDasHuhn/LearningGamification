@@ -76,8 +76,6 @@ export const INSET_SHADOW =
 
 export type AnswerState = "correct" | "wrong" | "selected" | null;
 
-// ─── Shared sub-components ────────────────────────────────────────────────────
-
 type ProgressBarProps = { current: number; total: number };
 
 export function ProgressBar({ current, total }: ProgressBarProps) {

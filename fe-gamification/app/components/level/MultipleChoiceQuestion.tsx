@@ -3,7 +3,7 @@ import {
   QUESTION_KEYFRAMES,
   COLORS,
   PIXEL_SHADOW,
-  type AnswerState,
+  INSET_SHADOW,
   QuestionHeader,
   FeedbackBar,
 } from "./QuestionShared";
@@ -11,7 +11,7 @@ import {
 export type MultipleChoiceQuestion = {
   question: string;
   options: string[];
-  correctIndex: number;
+  correctIndices: number[];
   feedbackCorrect: string;
   feedbackWrong: string;
 };
@@ -22,87 +22,134 @@ type MultipleChoiceQuestionProps = {
   totalQuestions: number;
   data: MultipleChoiceQuestion;
   onAnswer: (isCorrect: boolean) => void;
+  onSubmit?: (selectedIndices: number[]) => void;
   onLeave?: () => void;
 };
+
+type ButtonState = "idle" | "selected" | "correct" | "wrong" | "missed";
+
+function optionLabel(index: number): string {
+  return index < 26 ? String.fromCharCode(65 + index) : String(index + 1);
+}
 
 type OptionButtonProps = {
   label: string;
   text: string;
-  state: AnswerState;
+  state: ButtonState;
+  isMulti: boolean;
   onClick: () => void;
 };
 
-function OptionButton({ label, text, state, onClick }: OptionButtonProps) {
+function OptionButton({
+  label,
+  text,
+  state,
+  isMulti,
+  onClick,
+}: OptionButtonProps) {
   const bg =
     state === "correct"
       ? COLORS.correctBg
       : state === "wrong"
         ? COLORS.wrongBg
-        : state === "selected"
-          ? COLORS.selectedBg
-          : COLORS.bgMid;
+        : state === "missed"
+          ? "#1a1000"
+          : state === "selected"
+            ? COLORS.selectedBg
+            : COLORS.bgMid;
 
   const borderColor =
     state === "correct"
       ? COLORS.correctBorder
       : state === "wrong"
         ? COLORS.wrongBorder
-        : state === "selected"
-          ? COLORS.selectedBorder
-          : COLORS.rim2;
+        : state === "missed"
+          ? COLORS.amberDark
+          : state === "selected"
+            ? COLORS.selectedBorder
+            : COLORS.rim2;
 
   const textColor =
     state === "correct"
       ? COLORS.correctText
       : state === "wrong"
         ? COLORS.wrongText
-        : state === "selected"
-          ? COLORS.selectedText
-          : COLORS.textMid;
+        : state === "missed"
+          ? COLORS.amber
+          : state === "selected"
+            ? COLORS.selectedText
+            : COLORS.textMid;
 
-  const animClass =
+  const isLocked =
+    state === "correct" || state === "wrong" || state === "missed";
+
+  const animStyle: React.CSSProperties =
     state === "correct"
-      ? " q-anim-correct"
+      ? { animation: "answerCorrect 0.4s ease" }
       : state === "wrong"
-        ? " q-anim-wrong"
-        : "";
+        ? { animation: "answerWrong 0.4s ease" }
+        : {};
 
   return (
     <button
       onClick={onClick}
-      className={`q-pixel${animClass}`}
       style={{
         width: "100%",
-        padding: "12px 14px",
+        padding: "14px 16px",
         background: bg,
         border: `3px solid ${borderColor}`,
-        boxShadow: state ? "none" : PIXEL_SHADOW,
+        boxShadow: isLocked ? "none" : PIXEL_SHADOW,
         color: textColor,
-        fontSize: 9,
+        fontFamily: "'Press Start 2P', monospace",
+        fontSize: 10,
         textAlign: "left",
-        cursor: state ? "default" : "pointer",
+        cursor: isLocked ? "default" : "pointer",
         display: "flex",
         alignItems: "center",
-        gap: 10,
+        gap: 12,
         transition: "background 0.15s, border-color 0.15s",
-        lineHeight: 1.6,
+        lineHeight: 1.8,
+        ...animStyle,
       }}
     >
       <span
         style={{
-          minWidth: 22,
-          height: 22,
+          minWidth: 26,
+          height: 26,
           background: borderColor,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: 8,
+          fontSize: 9,
           color: bg,
           flexShrink: 0,
         }}
       >
         {label}
       </span>
+
+      {isMulti && (
+        <span
+          style={{
+            minWidth: 18,
+            height: 18,
+            border: `2px solid ${borderColor}`,
+            background:
+              state === "selected" || state === "correct"
+                ? borderColor
+                : "transparent",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 11,
+            color: bg,
+            flexShrink: 0,
+          }}
+        >
+          {state === "selected" || state === "correct" ? "✓" : ""}
+        </span>
+      )}
+
       {text}
     </button>
   );
@@ -114,32 +161,61 @@ export function MultipleChoiceQuestion({
   totalQuestions,
   data,
   onAnswer,
+  onSubmit,
   onLeave,
 }: MultipleChoiceQuestionProps) {
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
   const [revealed, setRevealed] = useState(false);
 
-  const isCorrect = selectedIndex === data.correctIndex;
+  const correctIndices: number[] = Array.isArray(data.correctIndices)
+    ? data.correctIndices
+    : [(data as unknown as { correctIndex: number }).correctIndex ?? 0];
 
-  function handleSelect(index: number) {
+  const isMulti = correctIndices.length > 1;
+  const isCorrect =
+    revealed &&
+    selected.size === correctIndices.length &&
+    correctIndices.every((i) => selected.has(i));
+
+  function toggleOption(index: number) {
     if (revealed) return;
-    setSelectedIndex(index);
-    setRevealed(true);
-    onAnswer(index === data.correctIndex);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (isMulti) {
+        next.has(index) ? next.delete(index) : next.add(index);
+      } else {
+        next.clear();
+        next.add(index);
+      }
+      return next;
+    });
   }
 
-  function getState(index: number): AnswerState {
-    if (!revealed) return selectedIndex === index ? "selected" : null;
-    if (index === data.correctIndex) return "correct";
-    if (index === selectedIndex) return "wrong";
-    return null;
+  function handleConfirm() {
+    if (revealed || selected.size === 0) return;
+    setRevealed(true);
+    const selectedIndices = [...selected];
+    onSubmit?.(selectedIndices);
+    const correct =
+      selected.size === correctIndices.length &&
+      correctIndices.every((i) => selected.has(i));
+    onAnswer(correct);
+  }
+
+  function getState(index: number): ButtonState {
+    const isCorrectOption = correctIndices.includes(index);
+    const wasSelected = selected.has(index);
+    if (!revealed) return wasSelected ? "selected" : "idle";
+    if (isCorrectOption && wasSelected) return "correct";
+    if (!isCorrectOption && wasSelected) return "wrong";
+    if (isCorrectOption && !wasSelected) return "missed";
+    return "idle";
   }
 
   return (
     <>
       <style>{QUESTION_KEYFRAMES}</style>
       <div
-        className="q-fade-in"
         style={{
           display: "flex",
           flexDirection: "column",
@@ -147,6 +223,7 @@ export function MultipleChoiceQuestion({
           border: `4px solid ${COLORS.rim2}`,
           boxShadow: "6px 6px 0 rgba(0,0,0,0.6)",
           overflow: "hidden",
+          animation: "fadeSlideIn 0.35s ease both",
         }}
       >
         <QuestionHeader
@@ -157,34 +234,75 @@ export function MultipleChoiceQuestion({
           onLeave={onLeave}
         />
 
-        <div style={{ padding: "20px 16px 12px" }}>
+        <div style={{ padding: "24px 20px 16px" }}>
+          {isMulti && (
+            <div
+              style={{
+                marginBottom: 16,
+                padding: "10px 14px",
+                background: COLORS.bgMid,
+                border: `2px solid ${COLORS.amber}`,
+                fontFamily: "'Press Start 2P', monospace",
+                fontSize: 8,
+                color: COLORS.amber,
+                lineHeight: 1.8,
+              }}
+            >
+              ★ Mehrere Antworten möglich
+            </div>
+          )}
+
           <p
-            className="q-pixel"
             style={{
-              fontSize: 10,
+              fontFamily: "'Press Start 2P', monospace",
+              fontSize: 12,
               color: COLORS.textBright,
-              lineHeight: 2,
+              lineHeight: 2.2,
               marginBottom: 20,
             }}
           >
             {data.question}
           </p>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {data.options.map((option, index) => (
               <OptionButton
                 key={index}
-                label={"ABCD"[index]}
+                label={optionLabel(index)}
                 text={option}
                 state={getState(index)}
-                onClick={() => handleSelect(index)}
+                isMulti={isMulti}
+                onClick={() => toggleOption(index)}
               />
             ))}
           </div>
         </div>
 
+        {!revealed && (
+          <div style={{ padding: "0 20px 16px" }}>
+            <button
+              onClick={handleConfirm}
+              disabled={selected.size === 0}
+              style={{
+                width: "100%",
+                padding: "16px",
+                fontFamily: "'Press Start 2P', monospace",
+                fontSize: 11,
+                background: selected.size > 0 ? COLORS.amberDark : COLORS.bgMid,
+                border: `3px solid ${selected.size > 0 ? COLORS.amber : COLORS.rim1}`,
+                boxShadow: selected.size > 0 ? PIXEL_SHADOW : "none",
+                color: selected.size > 0 ? COLORS.amberLight : COLORS.textFaint,
+                cursor: selected.size > 0 ? "pointer" : "default",
+                transition: "all 0.15s",
+              }}
+            >
+              BESTÄTIGEN ↵
+            </button>
+          </div>
+        )}
+
         {revealed && (
-          <div style={{ padding: "0 16px 16px" }}>
+          <div style={{ padding: "0 20px 20px" }}>
             <FeedbackBar
               isCorrect={isCorrect}
               correctText={data.feedbackCorrect}
@@ -197,33 +315,77 @@ export function MultipleChoiceQuestion({
   );
 }
 
-const EXAMPLE_QUESTION: MultipleChoiceQuestion = {
+const EXAMPLE_SINGLE: MultipleChoiceQuestion = {
   question: "Which method removes the\nlast element of an array?",
-  options: ["array.shift()", "array.pop()", "array.remove()", "array.splice()"],
-  correctIndex: 1,
+  options: [
+    "array.shift()",
+    "array.pop()",
+    "array.remove()",
+    "array.splice()",
+    "array.delete()",
+  ],
+  correctIndices: [1],
   feedbackCorrect: "✓ RICHTIG! pop() entfernt das letzte Element.",
   feedbackWrong: "✗ FALSCH! Die richtige Antwort ist array.pop()",
 };
 
+const EXAMPLE_MULTI: MultipleChoiceQuestion = {
+  question: "Welche sind gültige Wege\neine Variable zu deklarieren?",
+  options: [
+    "var x = 1",
+    "let x = 1",
+    "const x = 1",
+    "variable x = 1",
+    "def x = 1",
+    "val x = 1",
+  ],
+  correctIndices: [0, 1, 2],
+  feedbackCorrect: "✓ RICHTIG! var, let und const sind alle gültig.",
+  feedbackWrong: "✗ FALSCH! var, let und const sind korrekt.",
+};
+
 export default function MultipleChoicePreview() {
+  const [showMulti, setShowMulti] = useState(false);
   return (
     <div
       style={{
         minHeight: "100vh",
-        background: `linear-gradient(to bottom, #bae6fd, #bbf7d0)`,
+        background: "linear-gradient(to bottom, #bae6fd, #bbf7d0)",
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         padding: 24,
+        gap: 16,
       }}
     >
-      <div style={{ width: "100%", maxWidth: 420 }}>
+      <div style={{ display: "flex", gap: 10 }}>
+        {([false, true] as const).map((multi) => (
+          <button
+            key={String(multi)}
+            onClick={() => setShowMulti(multi)}
+            style={{
+              padding: "8px 16px",
+              fontFamily: "'Press Start 2P', monospace",
+              fontSize: 8,
+              background: showMulti === multi ? COLORS.amberDark : COLORS.bgMid,
+              border: `3px solid ${showMulti === multi ? COLORS.amber : COLORS.rim2}`,
+              color: showMulti === multi ? COLORS.amberLight : COLORS.textDim,
+              cursor: "pointer",
+            }}
+          >
+            {multi ? "MULTI-SELECT" : "SINGLE"}
+          </button>
+        ))}
+      </div>
+      <div style={{ width: "100%", maxWidth: 520 }}>
         <MultipleChoiceQuestion
+          key={String(showMulti)}
           levelNum={3}
           questionNum={2}
           totalQuestions={5}
-          data={EXAMPLE_QUESTION}
-          onAnswer={(correct) => console.log("answered:", correct)}
+          data={showMulti ? EXAMPLE_MULTI : EXAMPLE_SINGLE}
+          onAnswer={(c) => console.log("answered:", c)}
         />
       </div>
     </div>
