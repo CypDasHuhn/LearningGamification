@@ -59,6 +59,13 @@ Authenticated endpoints for drilling down through quiz content:
 - `GET /questions/{questionId}/answers` returns all possible answers for a question.
 - `POST /questions/{questionId}/answer` submits a user answer.
 
+## Leaderboard API
+
+Authenticated leaderboard endpoint:
+
+- `GET /leaderboard` returns ranked users by earned points.
+- `GET /leaderboard?limit=<n>` returns top `n` entries.
+
 ## OpenAPI Docs
 
 - OpenAPI spec: `GET /openapi`

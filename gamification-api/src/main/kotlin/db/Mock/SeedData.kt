@@ -43,6 +43,7 @@ fun seedMockData() {
         it[imageUrl] = null
         it[endText] = null
         it[allowsMultiple] = false
+        it[points] = 10
     }
 
     val tfQuestionId = Questions.insertAndGetId {
@@ -52,6 +53,7 @@ fun seedMockData() {
         it[imageUrl] = null
         it[endText] = null
         it[allowsMultiple] = false
+        it[points] = 10
     }
 
     val gapQuestionId = Questions.insertAndGetId {
@@ -61,6 +63,7 @@ fun seedMockData() {
         it[imageUrl] = null
         it[endText] = "coroutines."
         it[allowsMultiple] = false
+        it[points] = 10
     }
 
     QuestionThemes.insert {
@@ -79,28 +82,24 @@ fun seedMockData() {
     McAnswers.insert {
         it[questionId] = mcQuestionId
         it[optionText] = "Java Virtual Machine"
-        it[points] = 10
         it[isCorrect] = true
         it[optionOrder] = 1
     }
     McAnswers.insert {
         it[questionId] = mcQuestionId
         it[optionText] = "Java Variable Method"
-        it[points] = 0
         it[isCorrect] = false
         it[optionOrder] = 2
     }
     McAnswers.insert {
         it[questionId] = tfQuestionId
         it[optionText] = "True"
-        it[points] = 10
         it[isCorrect] = true
         it[optionOrder] = 1
     }
     McAnswers.insert {
         it[questionId] = tfQuestionId
         it[optionText] = "False"
-        it[points] = 0
         it[isCorrect] = false
         it[optionOrder] = 2
     }
@@ -108,9 +107,8 @@ fun seedMockData() {
     val gapFieldId = GapFields.insertAndGetId {
         it[questionId] = gapQuestionId
         it[gapIndex] = 0
-        it[inputType] = GapInputType.CHOICE
-        it[correctText] = null
-        it[caseSensitive] = false
+        it[textBefore] = "Ktor is built with"
+        it[textAfter] = "coroutines."
     }
 
     GapOptions.insert {

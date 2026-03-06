@@ -227,6 +227,109 @@ class ApplicationTest {
         assertEquals(HttpStatusCode.OK, submitResponse.status)
     }
 
+    @Test
+    fun testLeaderboardEndpoint() = testApplication {
+        application { module() }
+        val userNameA = "leader-a-${System.currentTimeMillis()}"
+        val userNameB = "leader-b-${System.currentTimeMillis()}"
+
+        suspend fun registerAndGetToken(userName: String): String {
+            val registerResponse =
+                client.post("/auth/register") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"userName":"$userName","password":"strongpass123"}""")
+                }
+            assertEquals(HttpStatusCode.Created, registerResponse.status)
+            return "\"token\":\"([^\"]+)\""
+                .toRegex()
+                .find(registerResponse.bodyAsText())
+                ?.groupValues
+                ?.get(1)
+                .orEmpty()
+        }
+
+        val tokenA = registerAndGetToken(userNameA)
+        val tokenB = registerAndGetToken(userNameB)
+        assertTrue(tokenA.isNotBlank())
+        assertTrue(tokenB.isNotBlank())
+
+        val questionsResponse =
+            client.get("/questions") {
+                header(HttpHeaders.Authorization, "Bearer $tokenA")
+            }
+        assertEquals(HttpStatusCode.OK, questionsResponse.status)
+
+        val questionsJson = Json.parseToJsonElement(questionsResponse.bodyAsText()).jsonArray
+        val mcQuestion =
+            questionsJson.firstOrNull {
+                val question = it.jsonObject
+                question["startText"]?.jsonPrimitive?.content == "What does JVM stand for?"
+            }?.jsonObject
+        assertNotNull(mcQuestion)
+
+        val questionId = mcQuestion["questionId"]!!.jsonPrimitive.int
+        val correctAnswerId =
+            mcQuestion["mcAnswers"]!!
+                .jsonArray
+                .firstOrNull { answer ->
+                    answer.jsonObject["optionText"]?.jsonPrimitive?.content == "Java Virtual Machine"
+                }
+                ?.jsonObject
+                ?.get("answerId")
+                ?.jsonPrimitive
+                ?.int
+        assertNotNull(correctAnswerId)
+
+        val submitResponse =
+            client.post("/questions/$questionId/submit") {
+                header(HttpHeaders.Authorization, "Bearer $tokenA")
+                contentType(ContentType.Application.Json)
+                setBody("""{"selectedAnswerIds":[$correctAnswerId]}""")
+            }
+        assertEquals(HttpStatusCode.OK, submitResponse.status)
+
+        val leaderboardResponse =
+            client.get("/leaderboard") {
+                header(HttpHeaders.Authorization, "Bearer $tokenA")
+            }
+        assertEquals(HttpStatusCode.OK, leaderboardResponse.status)
+
+        val leaderboard = Json.parseToJsonElement(leaderboardResponse.bodyAsText()).jsonArray
+        assertTrue(leaderboard.isNotEmpty())
+
+        val entryA =
+            leaderboard.firstOrNull {
+                it.jsonObject["userName"]?.jsonPrimitive?.content == userNameA
+            }?.jsonObject
+        val entryB =
+            leaderboard.firstOrNull {
+                it.jsonObject["userName"]?.jsonPrimitive?.content == userNameB
+            }?.jsonObject
+        assertNotNull(entryA)
+        assertNotNull(entryB)
+
+        val pointsA = entryA["points"]!!.jsonPrimitive.int
+        val pointsB = entryB["points"]!!.jsonPrimitive.int
+        assertTrue(pointsA > pointsB)
+        assertTrue(entryA["completedQuestions"]!!.jsonPrimitive.int >= 1)
+        assertTrue(entryA["currentUser"]!!.jsonPrimitive.boolean)
+        assertTrue(!entryB["currentUser"]!!.jsonPrimitive.boolean)
+
+        val limitedResponse =
+            client.get("/leaderboard?limit=1") {
+                header(HttpHeaders.Authorization, "Bearer $tokenA")
+            }
+        assertEquals(HttpStatusCode.OK, limitedResponse.status)
+        val limitedLeaderboard = Json.parseToJsonElement(limitedResponse.bodyAsText()).jsonArray
+        assertEquals(1, limitedLeaderboard.size)
+
+        val badLimitResponse =
+            client.get("/leaderboard?limit=abc") {
+                header(HttpHeaders.Authorization, "Bearer $tokenA")
+            }
+        assertEquals(HttpStatusCode.BadRequest, badLimitResponse.status)
+    }
+
     private fun buildSubmitPayload(answers: JsonObject): String {
         val questionType = answers["questionType"]!!.jsonPrimitive.content
         return when (questionType) {
@@ -239,13 +342,8 @@ class ApplicationTest {
                     answers["gapFields"]!!.jsonArray.joinToString(separator = ",") { gapFieldElement ->
                         val gapField = gapFieldElement.jsonObject
                         val gapId = gapField["gapId"]!!.jsonPrimitive.int
-                        val inputType = gapField["inputType"]!!.jsonPrimitive.content
-                        if (inputType == "CHOICE") {
-                            val optionId = gapField["options"]!!.jsonArray.first().jsonObject["gapOptionId"]!!.jsonPrimitive.int
-                            """{"gapId":$gapId,"selectedOptionId":$optionId}"""
-                        } else {
-                            """{"gapId":$gapId,"text":"sample"}"""
-                        }
+                        val optionId = gapField["options"]!!.jsonArray.first().jsonObject["gapOptionId"]!!.jsonPrimitive.int
+                        """{"gapId":$gapId,"selectedOptionId":$optionId}"""
                     }
                 """{"gapAnswers":[$gapAnswersJson]}"""
             }
