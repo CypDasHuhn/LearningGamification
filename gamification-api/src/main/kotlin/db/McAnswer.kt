@@ -11,7 +11,6 @@ object McAnswers : IntIdTable(name = "mc_answer", columnName = "answer_id") {
         onUpdate = ReferenceOption.CASCADE,
     )
     val optionText = text("option_text")
-    val points = integer("points").default(0)
     val isCorrect = bool("is_correct").default(false)
     val optionOrder = integer("option_order")
 

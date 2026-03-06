@@ -1,5 +1,6 @@
 val exposed_version: String by project
 val sqlite_version: String by project
+val mysql_version: String by project
 val kotlin_version: String by project
 val logback_version: String by project
 
@@ -31,6 +32,7 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-core:$exposed_version")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposed_version")
     implementation("org.xerial:sqlite-jdbc:$sqlite_version")
+    runtimeOnly("com.mysql:mysql-connector-j:$mysql_version")
     implementation("io.ktor:ktor-server-netty")
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.ktor:ktor-server-config-yaml")

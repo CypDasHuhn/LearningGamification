@@ -1,7 +1,6 @@
 package dev.gamification.backend.routes.questions
 
 import dev.gamification.backend.db.GapFields
-import dev.gamification.backend.db.GapInputType
 import dev.gamification.backend.db.GapOptions
 import dev.gamification.backend.db.McAnswers
 import dev.gamification.backend.db.QuestionSets
@@ -98,7 +97,6 @@ fun getQuestionsForUser(userId: Int, questionSetId: Int?): List<QuestionResponse
                         GapFieldResponse(
                             gapId = gapId,
                             gapIndex = gapField[GapFields.gapIndex],
-                            inputType = gapField[GapFields.inputType].name,
                             options = options,
                         )
                     }
@@ -215,7 +213,6 @@ fun getQuestionAnswers(questionId: Int): QuestionAnswersResult =
                     GapFieldResponse(
                         gapId = gapId,
                         gapIndex = field[GapFields.gapIndex],
-                        inputType = field[GapFields.inputType].name,
                         options =
                             optionsByGapId[gapId].orEmpty().map { option ->
                                 GapOptionResponse(
@@ -252,6 +249,7 @@ fun submitQuestionAnswer(userId: Int, questionId: Int, request: SubmitAnswerRequ
                         id = it[Questions.id].value,
                         type = it[Questions.questionType],
                         allowsMultiple = it[Questions.allowsMultiple],
+                        points = it[Questions.points],
                     )
                 }
         } ?: return SubmitQuestionResult.NotFound
@@ -260,7 +258,7 @@ fun submitQuestionAnswer(userId: Int, questionId: Int, request: SubmitAnswerRequ
     val evaluation =
         when (question.type) {
             QuestionType.MC, QuestionType.TF -> evaluateChoiceQuestion(question, request.selectedAnswerIds)
-            QuestionType.GAP -> evaluateGapQuestion(question.id, request.gapAnswers)
+            QuestionType.GAP -> evaluateGapQuestion(question, request.gapAnswers)
         }
 
     if (evaluation.validationError != null) {
@@ -348,9 +346,7 @@ private fun evaluateChoiceQuestion(question: QuestionMeta, selectedAnswerIds: Li
         val isCorrect = distinctSelectedIds.toSet() == correctOptionIds
         val awardedPoints =
             if (isCorrect) {
-                options
-                    .filter { it[McAnswers.id].value in distinctSelectedIds }
-                    .sumOf { it[McAnswers.points] }
+                question.points
             } else {
                 0
             }
@@ -362,11 +358,11 @@ private fun evaluateChoiceQuestion(question: QuestionMeta, selectedAnswerIds: Li
     }
 }
 
-private fun evaluateGapQuestion(questionId: Int, gapAnswers: List<GapAnswerInput>): SubmitEvaluation =
+private fun evaluateGapQuestion(question: QuestionMeta, gapAnswers: List<GapAnswerInput>): SubmitEvaluation =
     dbQuery {
         val fields =
             GapFields.selectAll()
-                .where { GapFields.questionId eq questionId }
+                .where { GapFields.questionId eq question.id }
                 .orderBy(GapFields.gapIndex to SortOrder.ASC)
                 .toList()
 
@@ -422,59 +418,27 @@ private fun evaluateGapQuestion(questionId: Int, gapAnswers: List<GapAnswerInput
                     validationError = "All gap fields must be answered",
                 )
 
-            val inputType = field[GapFields.inputType]
-            val isCorrect =
-                when (inputType) {
-                    GapInputType.FREE_TEXT -> {
-                        val providedText = answer.text?.trim()
-                            ?: return@dbQuery SubmitEvaluation(
-                                isCorrect = false,
-                                awardedPoints = 0,
-                                validationError = "Text answer is required for gapId=$gapId",
-                            )
+            val selectedOptionId = answer.selectedOptionId
 
-                        val expectedText = field[GapFields.correctText]
-                            ?: return@dbQuery SubmitEvaluation(
-                                isCorrect = false,
-                                awardedPoints = 0,
-                                validationError = "Gap field configuration is invalid for gapId=$gapId",
-                            )
+            val options = optionsByGapId[gapId].orEmpty()
+            val selectedOption = options.firstOrNull { it[GapOptions.id].value == selectedOptionId }
+                ?: return@dbQuery SubmitEvaluation(
+                    isCorrect = false,
+                    awardedPoints = 0,
+                    validationError = "Invalid selected option for gapId=$gapId",
+                )
 
-                        if (field[GapFields.caseSensitive]) {
-                            providedText == expectedText
-                        } else {
-                            providedText.equals(expectedText, ignoreCase = true)
-                        }
-                    }
-
-                    GapInputType.CHOICE -> {
-                        val selectedOptionId = answer.selectedOptionId
-                            ?: return@dbQuery SubmitEvaluation(
-                                isCorrect = false,
-                                awardedPoints = 0,
-                                validationError = "selectedOptionId is required for gapId=$gapId",
-                            )
-
-                        val options = optionsByGapId[gapId].orEmpty()
-                        val selectedOption = options.firstOrNull { it[GapOptions.id].value == selectedOptionId }
-                            ?: return@dbQuery SubmitEvaluation(
-                                isCorrect = false,
-                                awardedPoints = 0,
-                                validationError = "Invalid selected option for gapId=$gapId",
-                            )
-
-                        selectedOption[GapOptions.isCorrect]
-                    }
-                }
+            val isCorrect = selectedOption[GapOptions.isCorrect]
 
             if (isCorrect) {
                 correctCount += 1
             }
         }
 
+        val allCorrect = correctCount == fields.size
         SubmitEvaluation(
-            isCorrect = correctCount == fields.size,
-            awardedPoints = correctCount,
+            isCorrect = allCorrect,
+            awardedPoints = if (allCorrect) question.points else 0,
         )
     }
 
@@ -514,6 +478,7 @@ private data class QuestionMeta(
     val id: Int,
     val type: QuestionType,
     val allowsMultiple: Boolean,
+    val points: Int,
 )
 
 private data class SubmitEvaluation(

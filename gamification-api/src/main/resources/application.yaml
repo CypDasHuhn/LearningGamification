@@ -10,3 +10,11 @@ app:
   auth:
     jwt:
       secret: dev-only-secret-change-me
+  database:
+    sqlite:
+      url: "jdbc:sqlite:./kls_database.db?foreign_keys=on"
+    mysql:
+      enabled: true
+      url: "jdbc:mysql://localhost:3306/learning_gamification?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+      user: "gamification_app"
+      password: "devpwd"
