@@ -1,12 +1,29 @@
 import { ArrowLeft, User2 } from "lucide-react";
 import { Link } from "react-router";
+import { useState, useEffect } from "react";
+import { getAuthFromCookies, isGuestFromCookies } from "~/lib/auth-cookies";
 
 type IngameHeaderProps = {
   siteName: string;
   username?: string;
 };
 
-export function IngameHeader({ siteName, username = "Player 1" }: IngameHeaderProps) {
+function getDisplayName(override?: string): string {
+  if (override) return override;
+  if (typeof document === "undefined") return "Gast";
+  const auth = getAuthFromCookies();
+  if (auth) return auth.userName;
+  if (isGuestFromCookies()) return "Gast";
+  return "Gast";
+}
+
+export function IngameHeader({ siteName, username }: IngameHeaderProps) {
+  const [displayName, setDisplayName] = useState("Gast");
+
+  useEffect(() => {
+    setDisplayName(getDisplayName(username));
+  }, [username]);
+
   return (
     <header className="shrink-0 bg-linear-to-b from-sky-500 via-sky-600 to-sky-700 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 border-b-4 border-b-slate-900 shadow-[0_8px_0_rgba(15,23,42,0.9)]">
       <div className="mx-auto max-w-5xl px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2">
@@ -30,7 +47,7 @@ export function IngameHeader({ siteName, username = "Player 1" }: IngameHeaderPr
         </h1>
 
         <div className="flex items-center gap-1.5 sm:gap-2 rounded-md border-[3px] border-slate-900 bg-sky-800/90 px-2.5 py-1.5 sm:px-3 sm:py-2 text-[9px] sm:text-xs font-pixel text-amber-50 shadow-[0_3px_0_rgba(15,23,42,0.9)]">
-          <span className="max-w-[80px] sm:max-w-[120px] truncate">{username}</span>
+          <span className="max-w-[80px] sm:max-w-[120px] truncate">{displayName}</span>
           <div className="relative">
             <div className="absolute inset-0 rounded-full bg-amber-400 blur-[3px] opacity-60" />
             <div className="relative flex items-center justify-center rounded-full bg-rose-500 h-5 w-5 sm:h-6 sm:w-6 border-[2px] border-slate-900 text-slate-50">

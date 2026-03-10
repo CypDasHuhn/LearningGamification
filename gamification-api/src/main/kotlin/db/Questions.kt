@@ -21,6 +21,7 @@ object Questions : IntIdTable(name = "question", columnName = "question_id") {
     val imageUrl = text("image_url").nullable()
     val endText = text("end_text").nullable()
     val allowsMultiple = bool("allows_multiple").default(false)
+    val points = integer("points").default(1)
 
     init {
         index(customIndexName = "idx_question_question_set", isUnique = false, questionSetId)

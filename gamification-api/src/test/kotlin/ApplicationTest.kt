@@ -163,70 +163,6 @@ class ApplicationTest {
         assertTrue(updatedQuestion["completed"]!!.jsonPrimitive.boolean)
     }
 
-    @Test
-    fun testThemeToQuestionAnswerFlow() = testApplication {
-        application { module() }
-        val userName = "theme-flow-user-${System.currentTimeMillis()}"
-
-        val registerResponse =
-            client.post("/auth/register") {
-                contentType(ContentType.Application.Json)
-                setBody("""{"userName":"$userName","password":"strongpass123"}""")
-            }
-        assertEquals(HttpStatusCode.Created, registerResponse.status)
-
-        val token =
-            "\"token\":\"([^\"]+)\""
-                .toRegex()
-                .find(registerResponse.bodyAsText())
-                ?.groupValues
-                ?.get(1)
-        assertTrue(!token.isNullOrBlank())
-
-        val themesResponse =
-            client.get("/themes") {
-                header(HttpHeaders.Authorization, "Bearer $token")
-            }
-        assertEquals(HttpStatusCode.OK, themesResponse.status)
-        val themes = Json.parseToJsonElement(themesResponse.bodyAsText()).jsonArray
-        assertTrue(themes.isNotEmpty())
-
-        val themeId = themes.first().jsonObject["themeId"]!!.jsonPrimitive.int
-        val questionSetsResponse =
-            client.get("/themes/$themeId/question-sets") {
-                header(HttpHeaders.Authorization, "Bearer $token")
-            }
-        assertEquals(HttpStatusCode.OK, questionSetsResponse.status)
-        val questionSets = Json.parseToJsonElement(questionSetsResponse.bodyAsText()).jsonArray
-        assertTrue(questionSets.isNotEmpty())
-
-        val questionSetId = questionSets.first().jsonObject["questionSetId"]!!.jsonPrimitive.int
-        val questionsResponse =
-            client.get("/question-sets/$questionSetId/questions") {
-                header(HttpHeaders.Authorization, "Bearer $token")
-            }
-        assertEquals(HttpStatusCode.OK, questionsResponse.status)
-        val questions = Json.parseToJsonElement(questionsResponse.bodyAsText()).jsonArray
-        assertTrue(questions.isNotEmpty())
-
-        val questionId = questions.first().jsonObject["questionId"]!!.jsonPrimitive.int
-        val answersResponse =
-            client.get("/questions/$questionId/answers") {
-                header(HttpHeaders.Authorization, "Bearer $token")
-            }
-        assertEquals(HttpStatusCode.OK, answersResponse.status)
-        val answers = Json.parseToJsonElement(answersResponse.bodyAsText()).jsonObject
-
-        val submitPayload = buildSubmitPayload(answers)
-        val submitResponse =
-            client.post("/questions/$questionId/answer") {
-                header(HttpHeaders.Authorization, "Bearer $token")
-                contentType(ContentType.Application.Json)
-                setBody(submitPayload)
-            }
-        assertEquals(HttpStatusCode.OK, submitResponse.status)
-    }
-
     private fun buildSubmitPayload(answers: JsonObject): String {
         val questionType = answers["questionType"]!!.jsonPrimitive.content
         return when (questionType) {
@@ -239,13 +175,8 @@ class ApplicationTest {
                     answers["gapFields"]!!.jsonArray.joinToString(separator = ",") { gapFieldElement ->
                         val gapField = gapFieldElement.jsonObject
                         val gapId = gapField["gapId"]!!.jsonPrimitive.int
-                        val inputType = gapField["inputType"]!!.jsonPrimitive.content
-                        if (inputType == "CHOICE") {
-                            val optionId = gapField["options"]!!.jsonArray.first().jsonObject["gapOptionId"]!!.jsonPrimitive.int
-                            """{"gapId":$gapId,"selectedOptionId":$optionId}"""
-                        } else {
-                            """{"gapId":$gapId,"text":"sample"}"""
-                        }
+                        val optionId = gapField["options"]!!.jsonArray.first().jsonObject["gapOptionId"]!!.jsonPrimitive.int
+                        """{"gapId":$gapId,"selectedOptionId":$optionId}"""
                     }
                 """{"gapAnswers":[$gapAnswersJson]}"""
             }

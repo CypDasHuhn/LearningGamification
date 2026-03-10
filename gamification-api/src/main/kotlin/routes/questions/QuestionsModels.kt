@@ -38,7 +38,6 @@ data class McAnswerResponse(
 data class GapFieldResponse(
     val gapId: Int,
     val gapIndex: Int,
-    val inputType: String,
     val options: List<GapOptionResponse> = emptyList(),
 )
 
@@ -67,8 +66,7 @@ data class SubmitAnswerRequest(
 @Serializable
 data class GapAnswerInput(
     val gapId: Int,
-    val text: String? = null,
-    val selectedOptionId: Int? = null,
+    val selectedOptionId: Int,
 )
 
 @Serializable

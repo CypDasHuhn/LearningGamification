@@ -23,6 +23,5 @@ object QuestionThemes : Table(name = "Question_Theme") {
 
     init {
         index(customIndexName = "idx_question_theme_theme", isUnique = false, themeId)
-        index(customIndexName = "idx_question_theme_question", isUnique = false, questionId)
     }
 }
