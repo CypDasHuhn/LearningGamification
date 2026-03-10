@@ -1,0 +1,108 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2868
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fnil\fcharset0 MesloLGMDZNFM-Regular;\f2\fnil\fcharset0 HelveticaNeue;
+}
+{\colortbl;\red255\green255\blue255;\red85\green142\blue40;\red63\green105\blue30;\red0\green0\blue0;
+\red29\green38\blue43;\red255\green255\blue255;\red102\green177\blue50;\red63\green105\blue30;}
+{\*\expandedcolortbl;;\cssrgb\c39975\c61335\c20601;\cssrgb\c30831\c47797\c15540;\cssrgb\c0\c0\c0;
+\cssrgb\c15294\c19608\c22353;\cssrgb\c100000\c100000\c100000;\cssrgb\c46532\c73327\c25364;\cssrgb\c30831\c47797\c15540;}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat0\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid1\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid1}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}}
+\paperw11900\paperh16840\margl1440\margr1440\vieww14460\viewh17100\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs28 \cf0 Level 4\
+\
+1. What does it mean to a have a singleton of your logger?\
+\
+\cf2 	A one single instance\
+\cf0 	B multiple loggers routed into one logger\
+\
+2.  \expnd0\expndtw0\kerning0
+Based on Clean Code Principles, what is wrong with this method? Multiple options are correct.\
+\pard\pardeftab720\partightenfactor0
+\cf0 \
+\cf3 	A Magic Arguments\
+	B Unclear variable naming\
+	C multiple responsibilities\cf0 \
+	D bad formatting\kerning1\expnd0\expndtw0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf0 \expnd0\expndtw0\kerning0
+public static void doStuff(int a, int b, boolean flag, String s) \{\
+	int x = a + b;\
+	if(flag) \{\
+		x *= 2;\
+		System.out.println(s + x);\
+	\} else \{\
+		for(int i=0;i<3;i++) \{\
+		x += i;\
+		System.out.println(x);\
+		\}\
+	\}\
+\}
+\f0 \
+\
+3.  Which of the following statements about inheritance is false?\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls1\ilvl0
+\f2\fs32 \cf5 \cb6 \outl0\strokewidth0 \strokec5 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+
+\fs28 \cf5 \'95		A Java supports single inheritance.\uc0\u8232 \cf2 B Java allows multiple class inheritance using extends.\cf5 \uc0\u8232 C Interfaces can be used to achieve multiple inheritance.\u8232 D The super keyword can be used to invoke the parent class constructor\
+\
+4. Which statement about inheritance in object-oriented programming is correct? \
+\
+		A  A subclass cannot override methods of a superclass. \
+\cf2 		B. Inheritance allows code reuse and extension of existing classes. \
+\cf5 		C. A class can only inherit from one class in all programming languages. \
+		D. Inheritance prevents polymorphism\
+\
+
+\fs32 \
+
+\fs28 5. What is the main purpose of a debugger? \
+\
+		A. Compile code into machine language \
+		B. Optimize memory automatically \
+\cf2 		C. Execute code step-by-step to inspect variables and program flow \
+\cf5 		D. Convert code into pseudocode
+\fs32 \
+\
+
+\fs28 \
+6. Encapsulation in object-oriented programming means restricting direct access to some data and methods of an object.\
+\
+		\cf7 True\cf5 \
+		False\
+\
+\
+7. An interpreted language translates the entire program into machine code before execution, while a compiled language executes code line-by-line. \
+\
+		True\
+		\cf7 False\
+\
+\cf4 8. What\'92s the difference between an ArrayList and array (select all correct options)\
+\
+		A ArrayList takes in only primitives\
+\cf8 		B array saves its data in a full continuous memory address\
+		C ArrayList takes in only wrapper classes\
+		D ArrayList points to different places in memory where its data are\cf4 \
+\
+\
+9. What is polymorphism in object-oriented programming? \
+\
+		A. Storing multiple variables in one class \
+\cf2 		B. The ability of different objects to respond differently to the same method \
+\cf4 		C. Preventing access to private variables \
+		D. Creating multiple constructors in one program\
+\
+\
+ \
+10. In object-oriented programming, a constructor is automatically called when an object is created.\
+\
+		\cf2 True\cf4 \
+		False\cf5 \
+	\
+}
