@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link } from "react-router";
 
 import type { QuestionResponse } from "~/components/types";
-import { questions as questionsApi } from "../routes/apiClient";
 import { MultipleChoiceQuestion } from "~/components/level/MultipleChoiceQuestion";
 import { TrueFalseQuestion } from "~/components/level/TrueFalseQuestion";
 import { GapFillQuestion } from "~/components/level/GapQuestion";
@@ -152,7 +151,7 @@ export function Level({ questionSetId, title, questionList }: LevelProps) {
       levelNum: questionSetId,
       questionNum: state.phase === "question" ? state.currentIndex + 1 : 1,
       totalQuestions: total,
-      onAnswer: (_isCorrect: boolean) => {},
+      onAnswer: (isCorrect: boolean) => advance(isCorrect),
       onLeave: handleLeave,
     };
 
@@ -171,26 +170,11 @@ export function Level({ questionSetId, title, questionList }: LevelProps) {
               feedbackCorrect: "✓ RICHTIG!",
               feedbackWrong: "✗ FALSCH!",
             }}
-            onSubmit={(selectedIndices) => {
-              const selectedAnswerIds = selectedIndices.map(
-                (i) => sorted[i].answerId,
-              );
-              questionsApi
-                .submit(q.questionId, { selectedAnswerIds, gapAnswers: [] })
-                .then((res) => advance(res.isCorrect))
-                .catch(() => advance(false));
-            }}
           />
         );
       }
 
       case "TF": {
-        const trueAnswer = q.mcAnswers.find(
-          (a) => a.optionText.toLowerCase() === "true",
-        );
-        const falseAnswer = q.mcAnswers.find(
-          (a) => a.optionText.toLowerCase() === "false",
-        );
         return (
           <TrueFalseQuestion
             {...shared}
@@ -199,17 +183,6 @@ export function Level({ questionSetId, title, questionList }: LevelProps) {
               correctAnswer: true,
               feedbackCorrect: "✓ RICHTIG!",
               feedbackWrong: "✗ FALSCH!",
-            }}
-            onSubmit={(selectedIsTrue) => {
-              const chosen = selectedIsTrue ? trueAnswer : falseAnswer;
-              if (!chosen) return;
-              questionsApi
-                .submit(q.questionId, {
-                  selectedAnswerIds: [chosen.answerId],
-                  gapAnswers: [],
-                })
-                .then((res) => advance(res.isCorrect))
-                .catch(() => advance(false));
             }}
           />
         );
@@ -241,20 +214,6 @@ export function Level({ questionSetId, title, questionList }: LevelProps) {
               gaps,
               feedbackCorrect: "✓ RICHTIG!",
               feedbackWrong: "✗ FALSCH!",
-            }}
-            onSubmit={(gapSelections) => {
-              const gapAnswers = sortedGaps.map((gf) => {
-                const selectedIndex = gapSelections[gf.gapId] ?? 0;
-                const opts = [...gf.options].sort(
-                  (a, b) => a.optionOrder - b.optionOrder,
-                );
-                const selectedOptionId = opts[selectedIndex].gapOptionId;
-                return { gapId: gf.gapId, selectedOptionId };
-              });
-              questionsApi
-                .submit(q.questionId, { selectedAnswerIds: [], gapAnswers })
-                .then((res) => advance(res.isCorrect))
-                .catch(() => advance(false));
             }}
           />
         );
