@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { IngameHeader } from "~/components/ingame-header";
 
 import type { Level } from "../components/types";
@@ -29,10 +29,18 @@ import {
   CHARACTER_KEYFRAMES,
 } from "../components/character/PixelCharacter";
 
+const CHAPTER_TITLES: Record<string, string> = {
+  "1": "Einführung",
+  "2": "Variablen",
+  "3": "Schleifen",
+};
+
 export type { Level };
 
 export function LevelSelection({ levels }: { levels: Level[] }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const chapterTitle = CHAPTER_TITLES[searchParams.get("chapter") ?? ""] ?? "";
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const dragState = useRef({ active: false, startX: 0, scrollLeft: 0 });
   const animationFrameRef = useRef<number>(0);
@@ -175,7 +183,7 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
           nearestLevel.stars !== -1 &&
           Math.abs(nearestLevel.x - currentPosition.x) < NODE_RADIUS;
         if (isOnUnlockedNode) {
-          navigate(`/level/${nearestLevel.id}`);
+          navigate(`/level/${nearestLevel.id}?chapterTitle=${encodeURIComponent(chapterTitle)}`);
         }
       }
     }
@@ -362,6 +370,7 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
                     isCharacterOnNode &&
                     nearestLevelToCharacter?.id === level.id
                   }
+                  chapterTitle={chapterTitle}
                 />
               ))}
 

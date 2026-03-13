@@ -17,15 +17,19 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     throw data("Level nicht gefunden", { status: 404 });
   }
 
-  return { levelData };
+  const url = new URL(request.url);
+  const chapterTitle = url.searchParams.get("chapterTitle") ?? "";
+
+  return { levelData, chapterTitle };
 }
 
 export default function LevelRoute() {
-  const { levelData } = useLoaderData<typeof loader>();
+  const { levelData, chapterTitle } = useLoaderData<typeof loader>();
   return (
     <Level
       questionSetId={levelData.questionSetId}
       title={levelData.title}
+      chapterTitle={chapterTitle}
       questionList={levelData.questions}
     />
   );

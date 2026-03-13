@@ -26,12 +26,14 @@ type LevelNodeProps = {
   level: Level;
   isCurrent: boolean;
   isCharacterHere: boolean;
+  chapterTitle?: string;
 };
 
 export function LevelNode({
   level,
   isCurrent,
   isCharacterHere,
+  chapterTitle = "",
 }: LevelNodeProps) {
   const isLocked = level.stars === -1;
 
@@ -59,7 +61,7 @@ export function LevelNode({
         </div>
       ) : (
         <Link
-          to={`/level/${level.id}`}
+          to={`/level/${level.id}?chapterTitle=${encodeURIComponent(chapterTitle)}`}
           className="flex items-center justify-center rounded-full font-pixel hover:scale-110 active:scale-95 transition-transform"
           style={{
             width: NODE_RADIUS * 2,

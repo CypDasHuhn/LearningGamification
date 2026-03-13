@@ -11,6 +11,7 @@ import type { CodeToken, GapAnswer } from "~/components/level/GapQuestion";
 type LevelProps = {
   questionSetId: number;
   title: string;
+  chapterTitle: string;
   questionList: QuestionResponse[];
 };
 
@@ -90,7 +91,7 @@ function ResultScreen({
   );
 }
 
-export function Level({ questionSetId, title, questionList }: LevelProps) {
+export function Level({ questionSetId, title, chapterTitle, questionList }: LevelProps) {
   const total = questionList.length;
 
   const [state, setState] = useState<LevelPhase>({
@@ -199,7 +200,7 @@ export function Level({ questionSetId, title, questionList }: LevelProps) {
         flexDirection: "column",
       }}
     >
-      <IngameHeader siteName={title} backTo="/level-selection" backLabel="LEVEL AUSWAHL" />
+      <IngameHeader siteName={chapterTitle || title} backTo="/level-selection" backLabel="LEVEL AUSWAHL" />
       <div
         style={{
           flex: 1,

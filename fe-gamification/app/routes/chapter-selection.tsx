@@ -174,7 +174,7 @@ export default function ChapterSelection() {
 
   return (
     <div className="min-h-screen flex flex-col bg-linear-to-b from-sky-300 via-amber-100 to-emerald-200">
-      <IngameHeader siteName="Chapter Selection" />
+      <IngameHeader siteName="Kapitel Auswahl" />
 
       <div className="flex-1 flex justify-center items-center min-h-0 p-4">
         <div
