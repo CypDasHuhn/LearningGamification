@@ -20,6 +20,7 @@ export default function LevelRoute({ loaderData }: Route.ComponentProps) {
       questionSetId={loaderData.questionSetId}
       title={loaderData.title}
       questionList={loaderData.questions}
+      chapterTitle={loaderData.title}
     />
   );
 }
