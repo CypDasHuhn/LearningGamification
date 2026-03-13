@@ -49,10 +49,10 @@ export function IngameHeader({ siteName, username, backTo = "/", backLabel = "ME
         </h1>
 
         <div className="flex items-center gap-1.5 sm:gap-2 rounded-md border-[3px] border-slate-900 bg-sky-800/90 px-2.5 py-1.5 sm:px-3 sm:py-2 text-[9px] sm:text-xs font-pixel text-amber-50 shadow-[0_3px_0_rgba(15,23,42,0.9)]">
-          <span className="max-w-[80px] sm:max-w-[120px] truncate">{displayName}</span>
+          <span className="max-w-20 sm:max-w-30 truncate">{displayName}</span>
           <div className="relative">
             <div className="absolute inset-0 rounded-full bg-amber-400 blur-[3px] opacity-60" />
-            <div className="relative flex items-center justify-center rounded-full bg-rose-500 h-5 w-5 sm:h-6 sm:w-6 border-[2px] border-slate-900 text-slate-50">
+            <div className="relative flex items-center justify-center rounded-full bg-rose-500 h-5 w-5 sm:h-6 sm:w-6 border-2 border-slate-900 text-slate-50">
               <User2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
             </div>
           </div>

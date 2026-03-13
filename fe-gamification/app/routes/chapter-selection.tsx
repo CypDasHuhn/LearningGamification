@@ -37,7 +37,6 @@ const CHAPTERS = [
 type ChapterId = (typeof CHAPTERS)[number]["chapter"];
 
 function chapterPathD() {
-  if (CHAPTERS.length === 0) return "";
   let d = `M ${CHAPTERS[0].node.x} ${CHAPTERS[0].node.y}`;
   for (let i = 1; i < CHAPTERS.length; i++) {
     const p = CHAPTERS[i - 1].node;
@@ -60,8 +59,8 @@ function JetSprite() {
     >
       <div className="absolute left-0 top-2 w-9 h-4 rounded-r-full bg-sky-300" />
       <div className="absolute left-7 top-0 w-5 h-6 rounded-full bg-sky-400" />
-      <div className="absolute left-1 top-3 w-7 h-[3px] rounded-full bg-sky-500" />
-      <div className="absolute left-4 top-5 w-6 h-[3px] rounded-full bg-sky-500" />
+      <div className="absolute left-1 top-3 w-7 h-0.75 rounded-full bg-sky-500" />
+      <div className="absolute left-4 top-5 w-6 h-0.75 rounded-full bg-sky-500" />
       <div className="absolute right-1 top-2 w-2 h-3 rounded-full bg-amber-300" />
       <div className="absolute -left-1 top-2 w-2 h-3 rounded-full bg-sky-500" />
     </div>
@@ -181,7 +180,7 @@ export default function ChapterSelection() {
           ref={mapRef}
           tabIndex={0}
           onKeyDown={handleKeyDown}
-          className="relative w-full max-w-3xl aspect-[3/2] rounded-xl border-4 border-stone-800/40 shadow-[0_8px_0_rgba(15,23,42,0.6)] bg-emerald-700 overflow-hidden outline-none focus-visible:ring-4 focus-visible:ring-amber-300"
+          className="relative w-full max-w-3xl aspect-3/2 rounded-xl border-4 border-stone-800/40 shadow-[0_8px_0_rgba(15,23,42,0.6)] bg-emerald-700 overflow-hidden outline-none focus-visible:ring-4 focus-visible:ring-amber-300"
           aria-label="Kapitelkarte. Mit Pfeiltasten Kapitel wechseln, mit Enter öffnen."
         >
           <svg
