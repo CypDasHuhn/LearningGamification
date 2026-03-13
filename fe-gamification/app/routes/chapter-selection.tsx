@@ -173,7 +173,7 @@ export default function ChapterSelection() {
     CHAPTERS.find((c) => c.chapter === activeChapter) ?? CHAPTERS[0];
 
   return (
-    <div className="min-h-screen flex flex-col bg-linear-to-b from-sky-300 via-emerald-200 to-emerald-500 ">
+    <div className="min-h-screen flex flex-col bg-linear-to-b from-sky-300 via-amber-100 to-emerald-200">
       <IngameHeader siteName="Chapter Selection" />
 
       <div className="flex-1 flex justify-center items-center min-h-0 p-4">
@@ -181,7 +181,7 @@ export default function ChapterSelection() {
           ref={mapRef}
           tabIndex={0}
           onKeyDown={handleKeyDown}
-          className="relative w-full max-w-3xl aspect-[3/2] rounded-3xl border-4 border-stone-900 shadow-[0_16px_0_rgba(15,23,42,0.85)] bg-emerald-600 overflow-hidden outline-none focus-visible:ring-4 focus-visible:ring-amber-300"
+          className="relative w-full max-w-3xl aspect-[3/2] rounded-xl border-4 border-stone-800/40 shadow-[0_8px_0_rgba(15,23,42,0.6)] bg-emerald-700 overflow-hidden outline-none focus-visible:ring-4 focus-visible:ring-amber-300"
           aria-label="Kapitelkarte. Mit Pfeiltasten Kapitel wechseln, mit Enter öffnen."
         >
           <svg
@@ -189,30 +189,22 @@ export default function ChapterSelection() {
             preserveAspectRatio="xMidYMid meet"
             className="absolute inset-0 w-full h-full pointer-events-none"
           >
-            <defs>
-              <linearGradient id="bgStripes" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0" stopColor="#15803d" />
-                <stop offset="0.5" stopColor="#16a34a" />
-                <stop offset="1" stopColor="#15803d" />
-              </linearGradient>
-            </defs>
-
-            <rect width="100" height="100" fill="url(#bgStripes)" />
+            <rect width="100" height="100" fill="#3d7a20" />
             <rect
               x="0"
               y="0"
               width="40"
               height="100"
-              fill="#166534"
-              opacity="0.35"
+              fill="#448c22"
+              opacity="0.25"
             />
             <rect
               x="55"
               y="0"
               width="45"
               height="100"
-              fill="#16a34a"
-              opacity="0.22"
+              fill="#3a7018"
+              opacity="0.2"
             />
 
             <path
@@ -247,9 +239,10 @@ export default function ChapterSelection() {
               { x: 90, y: 60 },
             ].map((t, i) => (
               <g key={i}>
-                <circle cx={t.x} cy={t.y} r={4.2} fill="#14532d" />
-                <circle cx={t.x - 2} cy={t.y - 2} r={3.1} fill="#15803d" />
-                <circle cx={t.x + 1.5} cy={t.y + 1.2} r={2.7} fill="#16a34a" />
+                <rect x={t.x - 0.8} y={t.y} width="1.6" height="5" fill="#5c3a1e" />
+                <circle cx={t.x} cy={t.y - 1} r={4.5} fill="#1a4a0a" />
+                <circle cx={t.x - 1.5} cy={t.y - 2.5} r={3.2} fill="#2d6e1a" />
+                <circle cx={t.x + 1.2} cy={t.y - 3} r={2.8} fill="#3a8a20" />
               </g>
             ))}
             {[
@@ -259,13 +252,14 @@ export default function ChapterSelection() {
             ].map((r, i) => (
               <g key={i} opacity="0.9">
                 <ellipse
-                  cx={r.x + 1}
-                  cy={r.y + 1.5}
-                  rx="3.8"
-                  ry="2.4"
-                  fill="rgba(0,0,0,0.25)"
+                  cx={r.x + 0.5}
+                  cy={r.y + 1}
+                  rx="3.5"
+                  ry="2"
+                  fill="rgba(0,0,0,0.3)"
                 />
-                <ellipse cx={r.x} cy={r.y} rx="3.8" ry="2.4" fill="#737373" />
+                <ellipse cx={r.x} cy={r.y} rx="3.5" ry="2" fill="#8a8a7a" />
+                <ellipse cx={r.x - 0.5} cy={r.y - 0.8} rx="2.5" ry="1.4" fill="#a0a090" />
               </g>
             ))}
           </svg>
@@ -302,10 +296,10 @@ export default function ChapterSelection() {
           </div>
 
           <div className="absolute left-3 bottom-3 px-2 py-1 rounded bg-stone-900/70 text-amber-100 font-pixel text-[7px] shadow-[0_3px_0_rgba(0,0,0,0.7)]">
-            ← → Kapitel wählen · ↵ starten
+            ← → KAPITEL WÄHLEN · ↵ STARTEN
           </div>
-          <div className="absolute right-3 top-3 px-2 py-1 rounded bg-stone-900/60 text-amber-100 font-pixel text-[7px]">
-            {currentNode.title}
+          <div className="absolute right-3 top-3 px-2 py-1 rounded bg-stone-900/60 text-amber-100 font-pixel text-[7px] shadow-[0_3px_0_rgba(0,0,0,0.5)]">
+            {currentNode.title.toUpperCase()}
           </div>
         </div>
       </div>

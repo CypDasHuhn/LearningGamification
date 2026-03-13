@@ -73,22 +73,6 @@ export function LevelNode({
           {level.id}
         </Link>
       )}
-
-      {!isLocked && <StarRow starsEarned={Math.max(0, level.stars)} />}
-
-      <div
-        className="font-pixel text-center leading-snug px-1"
-        style={{
-          fontSize: "14px",
-          color: isLocked ? "#d6d3d1" : "#1c1917",
-          textShadow: isLocked
-            ? "1px 1px 0 rgba(0,0,0,0.8)"
-            : "1px 1px 0 rgba(255,255,255,0.9)",
-          maxWidth: NODE_RADIUS * 2 + 44,
-        }}
-      >
-        {level.title}
-      </div>
     </div>
   );
 }

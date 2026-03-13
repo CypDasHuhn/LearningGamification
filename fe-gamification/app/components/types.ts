@@ -118,3 +118,9 @@ export type Level = {
   stars: number;
   title: string;
 };
+
+export type LevelData = {
+  questionSetId: number;
+  title: string;
+  questions: QuestionResponse[];
+};
