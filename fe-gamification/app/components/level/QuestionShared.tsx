@@ -113,31 +113,6 @@ export function ProgressBar({ current, total }: ProgressBarProps) {
   );
 }
 
-type StarRowProps = { earned: number };
-
-export function StarRow({ earned }: StarRowProps) {
-  return (
-    <div style={{ display: "flex", gap: 4 }}>
-      {[1, 2, 3].map((starValue) => (
-        <span
-          key={starValue}
-          style={{
-            fontSize: 18,
-            color: starValue <= earned ? COLORS.amber : COLORS.rim1,
-            textShadow: starValue <= earned ? "1px 1px 0 #000" : "none",
-            animation:
-              starValue <= earned
-                ? `starPop 0.4s ease ${starValue * 0.1}s both`
-                : "none",
-          }}
-        >
-          ★
-        </span>
-      ))}
-    </div>
-  );
-}
-
 type QuestionHeaderProps = {
   levelNum: number;
   questionNum: number;
