@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
+import { IngameHeader } from "~/components/ingame-header";
 
 import type { QuestionResponse } from "~/components/types";
 import { MultipleChoiceQuestion } from "~/components/level/MultipleChoiceQuestion";
@@ -17,31 +18,6 @@ type LevelPhase =
   | { phase: "question"; currentIndex: number; correctCount: number }
   | { phase: "result"; correctCount: number; total: number };
 
-function computeStars(correctCount: number, total: number): number {
-  const ratio = correctCount / total;
-  if (ratio === 1) return 3;
-  if (ratio >= 0.5) return 2;
-  if (ratio > 0) return 1;
-  return 0;
-}
-
-function StarDisplay({ stars }: { stars: number }) {
-  return (
-    <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-      {[1, 2, 3].map((n) => (
-        <span
-          key={n}
-          style={{
-            fontSize: 28,
-            filter: stars >= n ? "none" : "grayscale(1) opacity(0.3)",
-          }}
-        >
-          ★
-        </span>
-      ))}
-    </div>
-  );
-}
 
 function ResultScreen({
   title,
@@ -52,7 +28,6 @@ function ResultScreen({
   correctCount: number;
   total: number;
 }) {
-  const stars = computeStars(correctCount, total);
   return (
     <div
       style={{
@@ -71,7 +46,6 @@ function ResultScreen({
     >
       <p style={{ fontSize: 10, color: "#94a3b8" }}>LEVEL ABGESCHLOSSEN</p>
       <h2 style={{ fontSize: 14, margin: 0 }}>{title}</h2>
-      <StarDisplay stars={stars} />
       <p style={{ fontSize: 9, color: "#94a3b8", lineHeight: 2 }}>
         {correctCount} / {total} RICHTIG
       </p>
@@ -142,17 +116,12 @@ export function Level({ questionSetId, title, questionList }: LevelProps) {
     }, 1200);
   }
 
-  function handleLeave() {
-    window.history.back();
-  }
-
   function renderQuestion(q: QuestionResponse) {
     const shared = {
       levelNum: questionSetId,
       questionNum: state.phase === "question" ? state.currentIndex + 1 : 1,
       totalQuestions: total,
       onAnswer: (isCorrect: boolean) => advance(isCorrect),
-      onLeave: handleLeave,
     };
 
     switch (q.questionType) {
@@ -227,11 +196,19 @@ export function Level({ questionSetId, title, questionList }: LevelProps) {
         minHeight: "100vh",
         background: "linear-gradient(to bottom, #bae6fd, #bbf7d0)",
         display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 24,
+        flexDirection: "column",
       }}
     >
+      <IngameHeader siteName={title} backTo="/level-selection" backLabel="LEVEL AUSWAHL" />
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 24,
+        }}
+      >
       <div style={{ width: "100%", maxWidth: 480 }}>
         {state.phase === "question" ? (
           renderQuestion(questionList[state.currentIndex])
@@ -242,6 +219,7 @@ export function Level({ questionSetId, title, questionList }: LevelProps) {
             total={state.total}
           />
         )}
+      </div>
       </div>
     </main>
   );

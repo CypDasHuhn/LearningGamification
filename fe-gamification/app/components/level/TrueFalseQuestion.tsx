@@ -22,7 +22,6 @@ type TrueFalseQuestionProps = {
   data: TrueFalseQuestion;
   onAnswer: (isCorrect: boolean) => void;
   onSubmit?: (selectedIsTrue: boolean) => void;
-  onLeave?: () => void;
 };
 
 export function TrueFalseQuestion({
@@ -32,7 +31,6 @@ export function TrueFalseQuestion({
   data,
   onAnswer,
   onSubmit,
-  onLeave,
 }: TrueFalseQuestionProps) {
   const [answer, setAnswer] = useState<boolean | null>(null);
 
@@ -64,8 +62,6 @@ export function TrueFalseQuestion({
           levelNum={levelNum}
           questionNum={questionNum}
           totalQuestions={totalQuestions}
-          stars={revealed && isCorrect ? 1 : 0}
-          onLeave={onLeave}
         />
 
         <div

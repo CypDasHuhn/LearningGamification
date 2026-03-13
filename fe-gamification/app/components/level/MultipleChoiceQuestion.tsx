@@ -23,7 +23,6 @@ type MultipleChoiceQuestionProps = {
   data: MultipleChoiceQuestion;
   onAnswer: (isCorrect: boolean) => void;
   onSubmit?: (selectedIndices: number[]) => void;
-  onLeave?: () => void;
 };
 
 type ButtonState = "idle" | "selected" | "correct" | "wrong" | "missed";
@@ -162,7 +161,6 @@ export function MultipleChoiceQuestion({
   data,
   onAnswer,
   onSubmit,
-  onLeave,
 }: MultipleChoiceQuestionProps) {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [revealed, setRevealed] = useState(false);
@@ -230,8 +228,6 @@ export function MultipleChoiceQuestion({
           levelNum={levelNum}
           questionNum={questionNum}
           totalQuestions={totalQuestions}
-          stars={revealed && isCorrect ? 1 : 0}
-          onLeave={onLeave}
         />
 
         <div style={{ padding: "24px 20px 16px" }}>

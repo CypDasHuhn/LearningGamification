@@ -33,7 +33,6 @@ type GapFillQuestionProps = {
   data: GapFillQuestion;
   onAnswer: (isCorrect: boolean) => void;
   onSubmit?: (gapSelections: Record<number, number>) => void;
-  onLeave?: () => void;
 };
 
 function optionLabel(index: number): string {
@@ -196,7 +195,6 @@ export function GapFillQuestion({
   data,
   onAnswer,
   onSubmit,
-  onLeave,
 }: GapFillQuestionProps) {
   const [activeGapId, setActiveGapId] = useState<number>(
     data.gaps[0]?.gapId ?? 0,
@@ -285,8 +283,6 @@ export function GapFillQuestion({
           levelNum={levelNum}
           questionNum={questionNum}
           totalQuestions={totalQuestions}
-          stars={revealed && isCorrect ? 2 : 0}
-          onLeave={onLeave}
         />
 
         <div

@@ -142,16 +142,12 @@ type QuestionHeaderProps = {
   levelNum: number;
   questionNum: number;
   totalQuestions: number;
-  stars: number;
-  onLeave?: () => void;
 };
 
 export function QuestionHeader({
   levelNum,
   questionNum,
   totalQuestions,
-  stars,
-  onLeave,
 }: QuestionHeaderProps) {
   return (
     <div
@@ -163,40 +159,15 @@ export function QuestionHeader({
         gap: 14,
       }}
     >
-      <button
-        onClick={onLeave}
-        className="q-pixel"
-        style={{
-          fontSize: 8,
-          color: COLORS.textDim,
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          padding: 0,
-          whiteSpace: "nowrap",
-        }}
-      >
-        ← VERLASSEN
-      </button>
-
       <div
         style={{ flex: 1, display: "flex", flexDirection: "column", gap: 7 }}
       >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
+        <span
+          className="q-pixel"
+          style={{ fontSize: 8, color: COLORS.textMid }}
         >
-          <span
-            className="q-pixel"
-            style={{ fontSize: 8, color: COLORS.textMid }}
-          >
-            LEVEL {levelNum}
-          </span>
-          <StarRow earned={stars} />
-        </div>
+          LEVEL {levelNum}
+        </span>
         <ProgressBar current={questionNum} total={totalQuestions} />
       </div>
     </div>
