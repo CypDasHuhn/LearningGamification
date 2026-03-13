@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
+import { IngameHeader } from "~/components/ingame-header";
 
 import type { Level } from "../components/types";
 import {
@@ -28,10 +29,18 @@ import {
   CHARACTER_KEYFRAMES,
 } from "../components/character/PixelCharacter";
 
+const CHAPTER_TITLES: Record<string, string> = {
+  "1": "Einführung",
+  "2": "Variablen",
+  "3": "Schleifen",
+};
+
 export type { Level };
 
 export function LevelSelection({ levels }: { levels: Level[] }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const chapterTitle = CHAPTER_TITLES[searchParams.get("chapter") ?? ""] ?? "";
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const dragState = useRef({ active: false, startX: 0, scrollLeft: 0 });
   const animationFrameRef = useRef<number>(0);
@@ -174,7 +183,7 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
           nearestLevel.stars !== -1 &&
           Math.abs(nearestLevel.x - currentPosition.x) < NODE_RADIUS;
         if (isOnUnlockedNode) {
-          navigate(`/level/${nearestLevel.id}`);
+          navigate(`/level/${nearestLevel.id}?chapterTitle=${encodeURIComponent(chapterTitle)}`);
         }
       }
     }
@@ -221,24 +230,7 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
     <main className="min-h-screen flex flex-col bg-linear-to-b from-sky-300 via-amber-100 to-emerald-200">
       <style>{CHARACTER_KEYFRAMES}</style>
 
-      <header className="flex items-center justify-between px-4 sm:px-8 py-4">
-        <Link
-          to="/"
-          className="font-pixel text-xs text-stone-700 dark:text-stone-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
-          style={{ textShadow: "1px 1px 0 rgba(255,255,255,0.4)" }}
-        >
-          ← ZURÜCK
-        </Link>
-        <h1
-          className="font-pixel text-base sm:text-xl text-stone-800 dark:text-stone-100"
-          style={{
-            textShadow: "2px 2px 0 #000, -1px -1px 0 rgba(255,255,255,0.2)",
-          }}
-        >
-          LEVEL AUSWAHL
-        </h1>
-        <div className="w-16" />
-      </header>
+      <IngameHeader siteName="Level Auswahl" backTo="/chapter-selection" backLabel="KAPITEL" />
 
       <div className="flex-1 flex flex-col items-center justify-center py-4">
         <div className="flex items-center w-full gap-2 px-2">
@@ -378,6 +370,7 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
                     isCharacterOnNode &&
                     nearestLevelToCharacter?.id === level.id
                   }
+                  chapterTitle={chapterTitle}
                 />
               ))}
 

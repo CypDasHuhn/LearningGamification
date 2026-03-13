@@ -43,8 +43,12 @@ const buttonStyle = {
 };
 
 export function Welcome() {
-  const splash = randomSplash();
+  const [splash, setSplash] = useState(SPLASH_TEXTS[0]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setSplash(randomSplash());
+  }, []);
   const [isAuth, setIsAuth] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
