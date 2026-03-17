@@ -93,3 +93,153 @@ export async function login(userName: string, password: string): Promise<AuthRes
     skipAuth: true,
   });
 }
+
+// --- Leaderboard ---
+
+export interface LeaderboardEntry {
+  rank: number;
+  userId: number;
+  userName: string;
+  points: number;
+  completedQuestions: number;
+  lastCompletedAt: number;
+  currentUser: boolean;
+}
+
+/** Leaderboard abrufen: GET /leaderboard?limit=... */
+export async function getLeaderboard(limit?: number): Promise<LeaderboardEntry[]> {
+  const query = limit != null ? `?limit=${limit}` : "";
+  return apiRequest<LeaderboardEntry[]>(`/leaderboard${query}`);
+}
+
+// --- Themes (Kapitel) ---
+
+export interface ThemeResponse {
+  themeId: number;
+  name: string;
+  description: string | null;
+  questionCount: number;
+}
+
+export interface ThemeQuestionSetResponse {
+  questionSetId: number;
+  title: string;
+  teamId: number;
+  questionCount: number;
+}
+
+/** Alle Themen/Kapitel: GET /themes */
+export async function getThemes(): Promise<ThemeResponse[]> {
+  return apiRequest<ThemeResponse[]>("/themes");
+}
+
+/** Question-Sets (Levels) eines Themas: GET /themes/{themeId}/question-sets */
+export async function getThemeQuestionSets(
+  themeId: number
+): Promise<ThemeQuestionSetResponse[]> {
+  return apiRequest<ThemeQuestionSetResponse[]>(
+    `/themes/${themeId}/question-sets`
+  );
+}
+
+// --- Question Sets ---
+
+/** Frage-Zusammenfassungen eines Sets: GET /question-sets/{questionSetId}/questions */
+export interface QuestionSummaryResponse {
+  questionId: number;
+  questionType: string;
+  startText: string | null;
+  imageUrl: string | null;
+  endText: string | null;
+  allowsMultiple: boolean;
+  completed: boolean;
+}
+
+export async function getQuestionSetQuestions(
+  questionSetId: number
+): Promise<QuestionSummaryResponse[]> {
+  return apiRequest<QuestionSummaryResponse[]>(
+    `/question-sets/${questionSetId}/questions`
+  );
+}
+
+// --- Questions ---
+
+export interface McAnswerResponse {
+  answerId: number;
+  optionText: string;
+  optionOrder: number;
+}
+
+export interface GapOptionResponse {
+  gapOptionId: number;
+  optionText: string;
+  optionOrder: number;
+}
+
+export interface GapFieldResponse {
+  gapId: number;
+  gapIndex: number;
+  options: GapOptionResponse[];
+}
+
+export interface QuestionResponse {
+  questionId: number;
+  questionSetId: number;
+  questionType: string;
+  startText: string | null;
+  imageUrl: string | null;
+  endText: string | null;
+  allowsMultiple: boolean;
+  completed: boolean;
+  mcAnswers: McAnswerResponse[];
+  gapFields: GapFieldResponse[];
+}
+
+/** Alle Fragen (optional gefiltert nach questionSetId): GET /questions?questionSetId=... */
+export async function getQuestions(questionSetId?: number): Promise<QuestionResponse[]> {
+  const query =
+    questionSetId != null ? `?questionSetId=${questionSetId}` : "";
+  return apiRequest<QuestionResponse[]>(`/questions${query}`);
+}
+
+export interface QuestionAnswersResponse {
+  questionId: number;
+  questionType: string;
+  allowsMultiple: boolean;
+  mcAnswers: McAnswerResponse[];
+  gapFields: GapFieldResponse[];
+}
+
+/** Antwortoptionen einer Frage: GET /questions/{questionId}/answers */
+export async function getQuestionAnswers(
+  questionId: number
+): Promise<QuestionAnswersResponse> {
+  return apiRequest<QuestionAnswersResponse>(
+    `/questions/${questionId}/answers`
+  );
+}
+
+export interface SubmitAnswerRequest {
+  selectedAnswerIds?: number[];
+  gapAnswers?: { gapId: number; selectedOptionId: number }[];
+}
+
+export interface SubmitAnswerResponse {
+  questionId: number;
+  questionType: string;
+  isCorrect: boolean;
+  awardedPoints: number;
+  completed: boolean;
+}
+
+/** Antwort abgeben: POST /questions/{questionId}/submit */
+export async function submitQuestionAnswer(
+  questionId: number,
+  body: SubmitAnswerRequest
+): Promise<SubmitAnswerResponse> {
+  return apiRequest<SubmitAnswerResponse>(
+    `/questions/${questionId}/submit`,
+    { method: "POST", body }
+  );
+}

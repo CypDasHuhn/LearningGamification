@@ -13,8 +13,9 @@ app:
   database:
     sqlite:
       url: "jdbc:sqlite:./kls_database.db?foreign_keys=on"
-    mysql:
       enabled: true
+    mysql:
+      enabled: false
       url: "jdbc:mysql://localhost:3306/learning_gamification?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
       user: "gamification_app"
       password: "devpwd"

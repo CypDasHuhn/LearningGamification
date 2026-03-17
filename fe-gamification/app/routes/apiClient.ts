@@ -106,7 +106,7 @@ export const questions = {
     questionId: number,
     body: SubmitAnswerRequest,
   ): Promise<SubmitAnswerResponse> {
-    return request("POST", `/questions/${questionId}/answer`, body);
+    return request("POST", `/questions/${questionId}/submit`, body);
   },
 };
 
