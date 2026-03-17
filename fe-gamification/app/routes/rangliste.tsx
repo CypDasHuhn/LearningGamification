@@ -1,17 +1,7 @@
 import { Link } from "react-router";
+import { useEffect, useState } from "react";
 import { IngameHeader } from "~/components/ingame-header";
-
-/** Platzhalter-Daten. Später durch API ersetzen (z. B. GET /api/leaderboard). */
-const MOCK_LEADERBOARD = [
-  { rank: 1, userName: "LernPro", xp: 2840 },
-  { rank: 2, userName: "CodeMaster", xp: 2190 },
-  { rank: 3, userName: "QuizQueen", xp: 1850 },
-  { rank: 4, userName: "WissensJäger", xp: 1420 },
-  { rank: 5, userName: "LevelUp", xp: 980 },
-  { rank: 6, userName: "XP_Sammler", xp: 720 },
-  { rank: 7, userName: "Starter", xp: 450 },
-  { rank: 8, userName: "Neuling", xp: 120 },
-];
+import { getLeaderboard, type LeaderboardEntry } from "~/lib/api";
 
 const RANK_ICONS: Record<number, string> = {
   1: "🥇",
@@ -20,6 +10,29 @@ const RANK_ICONS: Record<number, string> = {
 };
 
 export default function Rangliste() {
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    getLeaderboard()
+      .then((data) => {
+        if (!cancelled) setEntries(data);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Fehler beim Laden");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-linear-to-b from-sky-300 via-emerald-200 to-emerald-500">
       <IngameHeader siteName="Rangliste" />
@@ -41,7 +54,7 @@ export default function Rangliste() {
               🏆 TOP SPIELER
             </h2>
             <p className="font-pixel text-[8px] sm:text-[9px] text-stone-400 mt-1">
-              NACH XP
+              NACH PUNKTEN
             </p>
           </div>
 
@@ -49,27 +62,53 @@ export default function Rangliste() {
           <div className="grid grid-cols-[56px_1fr_72px] sm:grid-cols-[64px_1fr_80px] gap-2 px-4 py-2 bg-stone-600 dark:bg-stone-700 border-b-2 border-stone-800 font-pixel text-[8px] sm:text-[9px] text-stone-400 uppercase tracking-wide">
             <span>#</span>
             <span>Name</span>
-            <span className="text-right">XP</span>
+            <span className="text-right">Punkte</span>
           </div>
 
           {/* Einträge */}
           <ul className="divide-y-2 divide-stone-800 dark:divide-stone-700">
-            {MOCK_LEADERBOARD.map(({ rank, userName, xp }) => (
-              <li
-                key={rank}
-                className="grid grid-cols-[56px_1fr_72px] sm:grid-cols-[64px_1fr_80px] gap-2 px-4 py-2.5 sm:py-3 items-center bg-stone-700 odd:bg-stone-600 dark:bg-stone-800 dark:odd:bg-stone-700 hover:bg-amber-900/40 transition-colors"
-              >
-                <span className="font-pixel text-sm sm:text-base text-stone-200 flex items-center gap-1">
-                  {RANK_ICONS[rank] ?? rank}
-                </span>
-                <span className="font-pixel text-xs sm:text-sm text-stone-100 truncate">
-                  {userName}
-                </span>
-                <span className="font-pixel text-xs sm:text-sm text-amber-300 text-right">
-                  {xp.toLocaleString("de-DE")}
-                </span>
+            {loading && (
+              <li className="px-4 py-6 text-center font-pixel text-sm text-stone-400">
+                Lade Rangliste…
               </li>
-            ))}
+            )}
+            {error && (
+              <li className="px-4 py-6 text-center font-pixel text-sm text-amber-200">
+                {error}
+              </li>
+            )}
+            {!loading && !error && entries.length === 0 && (
+              <li className="px-4 py-6 text-center font-pixel text-sm text-stone-400">
+                Noch keine Einträge.
+              </li>
+            )}
+            {!loading &&
+              !error &&
+              entries.map(({ rank, userId, userName, points, currentUser }) => (
+                <li
+                  key={userId}
+                  className={`grid grid-cols-[56px_1fr_72px] sm:grid-cols-[64px_1fr_80px] gap-2 px-4 py-2.5 sm:py-3 items-center border-l-4 transition-colors ${
+                    currentUser
+                      ? "bg-amber-900/50 border-amber-400 dark:bg-amber-900/40"
+                      : "bg-stone-700 odd:bg-stone-600 dark:bg-stone-800 dark:odd:bg-stone-700 border-transparent hover:bg-amber-900/40"
+                  }`}
+                >
+                  <span className="font-pixel text-sm sm:text-base text-stone-200 flex items-center gap-1">
+                    {RANK_ICONS[rank] ?? rank}
+                  </span>
+                  <span className="font-pixel text-xs sm:text-sm text-stone-100 truncate">
+                    {userName}
+                    {currentUser && (
+                      <span className="ml-1 text-amber-300" aria-hidden="true">
+                        (du)
+                      </span>
+                    )}
+                  </span>
+                  <span className="font-pixel text-xs sm:text-sm text-amber-300 text-right">
+                    {points.toLocaleString("de-DE")}
+                  </span>
+                </li>
+              ))}
           </ul>
         </div>
 

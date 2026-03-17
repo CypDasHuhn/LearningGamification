@@ -1,10 +1,12 @@
 import { useRef, useState, useEffect } from "react";
-import { Link, useNavigate, redirect } from "react-router";
+import { Link, useNavigate, redirect, useLoaderData } from "react-router";
 import { IngameHeader } from "~/components/ingame-header";
 import {
   parseAuthFromCookieHeader,
   isGuestFromCookieHeader,
 } from "~/lib/auth-cookies";
+import { apiGetServer } from "~/lib/api-server";
+import type { ThemeResponse } from "~/lib/api";
 
 import type { Level } from "../components/types";
 import {
@@ -25,6 +27,27 @@ import {
 } from "../components/design/structures/MapDecorationsSVG";
 import { PlatformSVG } from "../components/design/structures/PlatformSVG";
 
+// All chapters share the same Y so they sit on the flat runway centerline
+const RUNWAY_Y = 215;
+
+const FALLBACK_CHAPTERS: Level[] = [
+  { id: 1, x: 300, y: RUNWAY_Y, stars: 1, title: "Einführung" },
+  { id: 2, x: 920, y: RUNWAY_Y, stars: 0, title: "Variablen" },
+  { id: 3, x: 1540, y: RUNWAY_Y, stars: -1, title: "Schleifen" },
+];
+
+function themesToChapters(themes: ThemeResponse[]): Level[] {
+  if (themes.length === 0) return FALLBACK_CHAPTERS;
+  const xPositions = [300, 920, 1540];
+  return themes.map((t, i) => ({
+    id: t.themeId,
+    x: xPositions[i % xPositions.length] ?? 300 + i * 620,
+    y: RUNWAY_Y,
+    stars: i === 0 ? 1 : i === 1 ? 0 : -1,
+    title: t.name,
+  }));
+}
+
 export async function loader({ request }: { request: Request }) {
   const cookieHeader = request.headers.get("Cookie");
   const hasAuth = parseAuthFromCookieHeader(cookieHeader) !== null;
@@ -32,17 +55,10 @@ export async function loader({ request }: { request: Request }) {
   if (!hasAuth && !isGuest) {
     return redirect("/");
   }
-  return null;
+  const themes = await apiGetServer<ThemeResponse[]>(cookieHeader, "/themes");
+  const chapters = themes ? themesToChapters(themes) : FALLBACK_CHAPTERS;
+  return { chapters };
 }
-
-// All chapters share the same Y so they sit on the flat runway centerline
-const RUNWAY_Y = 215;
-
-const CHAPTERS: Level[] = [
-  { id: 1, x: 300,  y: RUNWAY_Y, stars: 1, title: "Einführung" },
-  { id: 2, x: 920,  y: RUNWAY_Y, stars: 0, title: "Variablen"  },
-  { id: 3, x: 1540, y: RUNWAY_Y, stars: -1, title: "Schleifen" },
-];
 
 // ─── Runway dimensions ────────────────────────────────────────────────────────
 const RW_TOP    = 181;          // top of asphalt
@@ -164,7 +180,7 @@ function ChapterNode({
 }
 
 // ─── Runway SVG ───────────────────────────────────────────────────────────────
-function RunwaySVG() {
+function RunwaySVG({ chapters }: { chapters: Level[] }) {
   const dashCount = Math.ceil(MAP_WIDTH / 50);
   const dashW = 32;
   const dashH = 8;
@@ -197,7 +213,7 @@ function RunwaySVG() {
       ))}
 
       {/* Touchdown zone markings at each chapter */}
-      {CHAPTERS.map((ch) =>
+      {chapters.map((ch) =>
         ([-1, 1] as const).map((side) =>
           [0, 1, 2, 3].map((row) => {
             const blockH = 9;
@@ -227,6 +243,7 @@ function RunwaySVG() {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function ChapterSelection() {
+  const { chapters } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const dragState = useRef({ active: false, startX: 0, scrollLeft: 0 });
@@ -234,26 +251,26 @@ export default function ChapterSelection() {
   const pressedKeys = useRef({ left: false, right: false });
 
   const pathSamples = useRef<{ x: number; y: number }[]>([]);
-  if (pathSamples.current.length === 0 && CHAPTERS.length > 1) {
-    pathSamples.current = buildPathSamples(CHAPTERS, 150);
+  if (pathSamples.current.length === 0 && chapters.length > 1) {
+    pathSamples.current = buildPathSamples(chapters, 150);
   }
   const samples = pathSamples.current;
 
   const decorations = useRef<ReturnType<typeof generateDecorationPositions>>(
-    generateDecorationPositions(CHAPTERS),
+    generateDecorationPositions(chapters),
   );
   const { trees, rocks, flowers } = decorations.current;
 
-  const lastUnlockedIndex = CHAPTERS.reduce(
+  const lastUnlockedIndex = chapters.reduce(
     (last, ch, idx) => (ch.stars !== -1 ? idx : last),
     0,
   );
   const maxReachableSampleIndex =
     samples.length > 0
-      ? findClosestSampleIndex(samples, CHAPTERS[lastUnlockedIndex])
+      ? findClosestSampleIndex(samples, chapters[lastUnlockedIndex])
       : 0;
 
-  const startChapter = CHAPTERS.find((c) => c.stars === 0) ?? CHAPTERS[lastUnlockedIndex];
+  const startChapter = chapters.find((c) => c.stars === 0) ?? chapters[lastUnlockedIndex];
   const initialSampleIndex =
     samples.length > 0 ? findClosestSampleIndex(samples, startChapter) : 0;
 
@@ -264,23 +281,23 @@ export default function ChapterSelection() {
   const isFacingLeftRef = useRef(false);
 
   const characterPosition = samples[characterSampleIndex] ?? {
-    x: CHAPTERS[0]?.x ?? 0,
-    y: CHAPTERS[0]?.y ?? 0,
+    x: chapters[0]?.x ?? 0,
+    y: chapters[0]?.y ?? 0,
   };
 
-  const nearestChapter = CHAPTERS.reduce<Level>(
+  const nearestChapter = chapters.reduce<Level>(
     (nearest, ch) =>
       Math.abs(ch.x - characterPosition.x) < Math.abs(nearest.x - characterPosition.x)
         ? ch
         : nearest,
-    CHAPTERS[0],
+    chapters[0],
   );
 
   const isCharacterOnNode =
     nearestChapter &&
     Math.abs(nearestChapter.x - characterPosition.x) < NODE_RADIUS;
 
-  const currentProgressChapter = CHAPTERS.find((c) => c.stars === 0);
+  const currentProgressChapter = chapters.find((c) => c.stars === 0);
 
   useEffect(() => {
     if (samples.length === 0) return;
@@ -333,10 +350,10 @@ export default function ChapterSelection() {
       if (event.key === "Enter") {
         const pos = samples[characterSampleIndexRef.current];
         if (!pos) return;
-        const nearest = CHAPTERS.reduce<Level>(
+        const nearest = chapters.reduce<Level>(
           (acc, ch) =>
             Math.abs(ch.x - pos.x) < Math.abs(acc.x - pos.x) ? ch : acc,
-          CHAPTERS[0],
+          chapters[0],
         );
         if (nearest && nearest.stars !== -1 && Math.abs(nearest.x - pos.x) < NODE_RADIUS) {
           navigate(`/level-selection?chapter=${nearest.id}`);
@@ -419,10 +436,10 @@ export default function ChapterSelection() {
                 ))}
 
                 {/* ── Runway ── */}
-                <RunwaySVG />
+                <RunwaySVG chapters={chapters} />
 
                 {/* ── Platform nodes ── */}
-                {CHAPTERS.map((ch) => (
+                {chapters.map((ch) => (
                   <PlatformSVG
                     key={ch.id}
                     x={ch.x}
@@ -441,7 +458,7 @@ export default function ChapterSelection() {
               </svg>
 
               {/* ── Chapter node overlays ── */}
-              {CHAPTERS.map((ch) => (
+              {chapters.map((ch) => (
                 <ChapterNode key={ch.id} chapter={ch} />
               ))}
 
