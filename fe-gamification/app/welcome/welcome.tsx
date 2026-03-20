@@ -1,15 +1,8 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router";
-import { LoginDialog } from "~/components/LoginDialog";
-import { RegisterDialog } from "~/components/RegisterDialog";
-import {
-  getAuthFromCookies,
-  isGuestFromCookies,
-  setAuthCookies,
-  setGuestCookies,
-  clearAuthCookies,
-} from "~/lib/auth-cookies";
-import { login as apiLogin, register as apiRegister } from "~/lib/api";
+import { Link } from "react-router";
+import { useAuth } from "~/hooks/useAuth";
+import { AuthDialog } from "~/components/AuthDialog";
+import type { AuthMode } from "~/components/AuthDialog";
 
 const SPLASH_TEXTS = [
   "Lernen macht süchtig!",
@@ -23,107 +16,51 @@ function randomSplash() {
   return SPLASH_TEXTS[Math.floor(Math.random() * SPLASH_TEXTS.length)];
 }
 
-const mainMenuItems = [
-  { to: "/chapter-selection", label: "Lernen starten", icon: "▶" },
-  { to: "/fortschritt", label: "Fortschritt", icon: "📊" },
-  { to: "/rangliste", label: "Rangliste", icon: "🏆" },
-];
+const MAIN_MENU_ITEMS = [
+  { to: "/chapter-selection", label: "Lernen starten", icon: "▶", requiresAuth: true },
+  { to: "/fortschritt",       label: "Fortschritt",    icon: "📊", requiresAuth: false },
+  { to: "/rangliste",         label: "Rangliste",      icon: "🏆", requiresAuth: false },
+] as const;
 
-const footerMenuItems = [
+const FOOTER_LINKS = [
   { to: "/einstellungen", label: "Einstellungen..." },
-  { href: "https://reactrouter.com/docs", label: "Docs", external: true },
-  { href: "https://rmx.as/discord", label: "Discord", external: true },
-];
+] as const;
 
-const buttonClass =
-  "menu-button block w-full py-4 px-6 font-pixel text-base sm:text-lg text-stone-200 bg-stone-600 dark:bg-stone-700 border-4 border-stone-800 dark:border-stone-800 rounded hover:brightness-110 active:scale-[0.98] transition-all text-center";
-const buttonStyle = {
-  boxShadow:
-    "inset 2px 2px 0 rgba(255,255,255,0.15), 4px 4px 0 rgba(0,0,0,0.4)",
+const BUTTON_CLASS =
+  "menu-button block w-full py-4 px-6 font-pixel text-base sm:text-lg text-stone-200 bg-stone-600 dark:bg-stone-700 border-4 border-stone-800 rounded hover:brightness-110 active:scale-[0.98] transition-all text-center";
+const BUTTON_STYLE = {
+  boxShadow: "inset 2px 2px 0 rgba(255,255,255,0.15), 4px 4px 0 rgba(0,0,0,0.4)",
 };
 
 export function Welcome() {
   const [splash, setSplash] = useState(SPLASH_TEXTS[0]);
-  const navigate = useNavigate();
+  const [dialogMode, setDialogMode] = useState<AuthMode | null>(null);
+
+  const { isAuth, loading, error, clearError, login, register, loginAsGuest, logout } =
+    useAuth();
 
   useEffect(() => {
     setSplash(randomSplash());
   }, []);
-  const [isAuth, setIsAuth] = useState(false);
-  const [loginOpen, setLoginOpen] = useState(false);
-  const [registerOpen, setRegisterOpen] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [authLoading, setAuthLoading] = useState(false);
 
-  useEffect(() => {
-    setIsAuth(getAuthFromCookies() !== null || isGuestFromCookies());
-  }, []);
-
-  function openAuthDialog() {
-    setAuthError(null);
-    setLoginOpen(true);
-    setRegisterOpen(false);
+  function openDialog(mode: AuthMode) {
+    clearError();
+    setDialogMode(mode);
   }
 
-  function switchToRegister() {
-    setAuthError(null);
-    setRegisterOpen(true);
-    setLoginOpen(false);
+  function closeDialog() {
+    clearError();
+    setDialogMode(null);
   }
 
-  function switchToLogin() {
-    setAuthError(null);
-    setLoginOpen(true);
-    setRegisterOpen(false);
-  }
-
-  function handleLogin(userName: string, password: string) {
-    setAuthLoading(true);
-    setAuthError(null);
-    apiLogin(userName, password)
-      .then((data) => {
-        setAuthCookies(data);
-        setIsAuth(true);
-        setLoginOpen(false);
-        navigate("/chapter-selection");
-      })
-      .catch((err) => {
-        setAuthError(err instanceof Error ? err.message : "Anmeldung fehlgeschlagen");
-      })
-      .finally(() => setAuthLoading(false));
-  }
-
-  function handleRegister(userName: string, password: string) {
-    setAuthLoading(true);
-    setAuthError(null);
-    apiRegister(userName, password)
-      .then((data) => {
-        setAuthCookies(data);
-        setIsAuth(true);
-        setRegisterOpen(false);
-        navigate("/chapter-selection");
-      })
-      .catch((err) => {
-        setAuthError(err instanceof Error ? err.message : "Registrierung fehlgeschlagen");
-      })
-      .finally(() => setAuthLoading(false));
-  }
-
-  function handleGuestLogin() {
-    setGuestCookies();
-    setIsAuth(true);
-    setLoginOpen(false);
-    navigate("/chapter-selection");
-  }
-
-  function handleLogout() {
-    clearAuthCookies();
-    setIsAuth(false);
+  function handleSubmit(userName: string, password: string) {
+    if (dialogMode === "login") login(userName, password);
+    else if (dialogMode === "register") register(userName, password);
   }
 
   return (
     <main className="min-h-screen flex flex-col bg-linear-to-b from-sky-300 via-amber-100 to-emerald-200">
-      {/* Splash-Text oben rechts */}
+      {/* Splash text */}
       <div
         className="absolute top-8 right-8 md:top-12 md:right-12 text-amber-600 dark:text-amber-400 font-pixel text-sm md:text-base transform rotate-12 drop-shadow-md select-none"
         style={{ textShadow: "2px 2px 0 #000" }}
@@ -131,12 +68,12 @@ export function Welcome() {
         {splash}
       </div>
 
-      {/* Anmelden / Registrierung oder Abmelden */}
+      {/* Auth button */}
       <div className="absolute top-8 left-8 md:top-12 md:left-12 z-10">
         {isAuth ? (
           <button
             type="button"
-            onClick={handleLogout}
+            onClick={logout}
             className="font-pixel text-sm md:text-base text-stone-700 dark:text-stone-300 hover:text-amber-600 dark:hover:text-amber-400 py-2 px-3 rounded border-2 border-stone-600 hover:border-amber-500/50 transition-colors cursor-pointer"
           >
             Abmelden
@@ -144,7 +81,7 @@ export function Welcome() {
         ) : (
           <button
             type="button"
-            onClick={openAuthDialog}
+            onClick={() => openDialog("login")}
             className="font-pixel text-sm md:text-base text-stone-700 dark:text-stone-300 hover:text-amber-600 dark:hover:text-amber-400 py-2 px-3 rounded border-2 border-stone-600 hover:border-amber-500/50 transition-colors cursor-pointer"
           >
             Anmelden / Registrierung
@@ -152,14 +89,12 @@ export function Welcome() {
         )}
       </div>
 
-      {/* Zentrierter Inhalt */}
+      {/* Main content */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-8 relative">
         <header className="mb-10 md:mb-14 text-center">
           <h1
             className="font-pixel text-2xl sm:text-3xl md:text-4xl text-stone-800 dark:text-stone-100 tracking-wide"
-            style={{
-              textShadow: "3px 3px 0 #000, -1px -1px 0 rgba(255,255,255,0.3)",
-            }}
+            style={{ textShadow: "3px 3px 0 #000, -1px -1px 0 rgba(255,255,255,0.3)" }}
           >
             LEARNING
           </h1>
@@ -172,25 +107,20 @@ export function Welcome() {
         </header>
 
         <nav className="w-full max-w-[320px] space-y-3">
-          {mainMenuItems.map(({ to, label, icon }) =>
-            to === "/chapter-selection" && !isAuth ? (
+          {MAIN_MENU_ITEMS.map(({ to, label, icon, requiresAuth }) =>
+            requiresAuth && !isAuth ? (
               <button
                 key={to}
                 type="button"
-                onClick={openAuthDialog}
-                className={buttonClass}
-                style={buttonStyle}
+                onClick={() => openDialog("login")}
+                className={BUTTON_CLASS}
+                style={BUTTON_STYLE}
               >
                 <span className="mr-2">{icon}</span>
                 {label}
               </button>
             ) : (
-              <Link
-                key={to}
-                to={to}
-                className={buttonClass}
-                style={buttonStyle}
-              >
+              <Link key={to} to={to} className={BUTTON_CLASS} style={BUTTON_STYLE}>
                 <span className="mr-2">{icon}</span>
                 {label}
               </Link>
@@ -200,27 +130,15 @@ export function Welcome() {
       </div>
 
       <footer className="flex flex-wrap items-center justify-center gap-3 md:gap-6 px-4 py-4 bg-stone-900/50 dark:bg-stone-950/70 border-t-2 border-stone-700 dark:border-stone-800">
-        {footerMenuItems.map((item) =>
-          "external" in item && item.external ? (
-            <a
-              key={item.label}
-              href={item.href}
-              target="_blank"
-              rel="noreferrer"
-              className="footer-btn font-pixel text-xs sm:text-sm text-stone-300 hover:text-amber-400 py-2 px-3 rounded border-2 border-stone-600 hover:border-amber-500/50 transition-colors"
-            >
-              {item.label}
-            </a>
-          ) : (
-            <Link
-              key={item.label}
-              to={(item as { to: string }).to}
-              className="footer-btn font-pixel text-xs sm:text-sm text-stone-300 hover:text-amber-400 py-2 px-3 rounded border-2 border-stone-600 hover:border-amber-500/50 transition-colors"
-            >
-              {item.label}
-            </Link>
-          ),
-        )}
+        {FOOTER_LINKS.map(({ to, label }) => (
+          <Link
+            key={to}
+            to={to}
+            className="footer-btn font-pixel text-xs sm:text-sm text-stone-300 hover:text-amber-400 py-2 px-3 rounded border-2 border-stone-600 hover:border-amber-500/50 transition-colors"
+          >
+            {label}
+          </Link>
+        ))}
       </footer>
 
       <div className="flex justify-between items-center px-4 py-2 text-stone-600 dark:text-stone-500 font-pixel text-xs">
@@ -228,22 +146,15 @@ export function Welcome() {
         <span className="opacity-80">© 2025</span>
       </div>
 
-      <LoginDialog
-        isOpen={loginOpen}
-        onClose={() => { setLoginOpen(false); setAuthError(null); }}
-        onSubmit={handleLogin}
-        onSwitchToRegister={switchToRegister}
-        onGuestLogin={handleGuestLogin}
-        error={authError}
-        loading={authLoading}
-      />
-      <RegisterDialog
-        isOpen={registerOpen}
-        onClose={() => { setRegisterOpen(false); setAuthError(null); }}
-        onSubmit={handleRegister}
-        onSwitchToLogin={switchToLogin}
-        error={authError}
-        loading={authLoading}
+      <AuthDialog
+        mode={dialogMode ?? "login"}
+        isOpen={dialogMode !== null}
+        onClose={closeDialog}
+        onSubmit={handleSubmit}
+        onSwitchMode={() => openDialog(dialogMode === "login" ? "register" : "login")}
+        onGuestLogin={loginAsGuest}
+        error={error}
+        loading={loading}
       />
     </main>
   );

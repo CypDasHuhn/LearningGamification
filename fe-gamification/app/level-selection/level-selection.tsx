@@ -1,33 +1,25 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { IngameHeader } from "~/components/ingame-header";
-
-import type { Level } from "../components/types";
-import {
-  MAP_WIDTH,
-  MAP_HEIGHT,
-  NODE_RADIUS,
-  CHARACTER_WALK_SPEED,
-  CHARACTER_VERTICAL_OFFSET,
-} from "../components/mapConstants";
-import { generateDecorationPositions } from "../components/design/positions/mapDecorations";
-import {
-  buildPathSamples,
-  findClosestSampleIndex,
-  buildSvgPathD,
-} from "../components/design/positions/pathUtils";
+import type { Level } from "~/components/types";
+import { MAP_WIDTH, MAP_HEIGHT, CHARACTER_VERTICAL_OFFSET } from "~/components/mapConstants";
+import { buildSvgPathD } from "~/components/design/positions/pathUtils";
 import {
   TreeSVG,
   RockSVG,
   FlowerSVG,
   RiverSVG,
-} from "../components/design/structures/MapDecorationsSVG";
-import { PlatformSVG } from "../components/design/structures/PlatformSVG";
-import { LevelNode } from "../components/design/structures/LevelNode";
+} from "~/components/design/structures/MapDecorationsSVG";
+import { PlatformSVG } from "~/components/design/structures/PlatformSVG";
+import { LevelNode } from "~/components/design/structures/LevelNode";
 import {
   PixelCharacter,
   CHARACTER_KEYFRAMES,
-} from "../components/character/PixelCharacter";
+} from "~/components/character/PixelCharacter";
+import { useMapNavigation } from "~/hooks/useMapNavigation";
+import { useScrollDrag } from "~/hooks/useScrollDrag";
+
+export type { Level };
 
 const CHAPTER_TITLES: Record<string, string> = {
   "1": "Einführung",
@@ -35,218 +27,53 @@ const CHAPTER_TITLES: Record<string, string> = {
   "3": "Schleifen",
 };
 
-export type { Level };
-
 export function LevelSelection({ levels }: { levels: Level[] }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const chapterTitle = CHAPTER_TITLES[searchParams.get("chapter") ?? ""] ?? "";
+
+  const chapterId = searchParams.get("chapter") ?? "";
+  const chapterTitle = CHAPTER_TITLES[chapterId] ?? "";
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const dragState = useRef({ active: false, startX: 0, scrollLeft: 0 });
-  const animationFrameRef = useRef<number>(0);
-  const pressedKeys = useRef({ left: false, right: false });
+  const { onMouseDown, onMouseMove, onDragEnd } = useScrollDrag(scrollContainerRef);
 
-  const pathSamples = useRef<{ x: number; y: number }[]>([]);
-  if (pathSamples.current.length === 0 && levels.length > 1) {
-    pathSamples.current = buildPathSamples(levels, 150);
-  }
-  const samples = pathSamples.current;
+  const {
+    characterPosition,
+    isFacingLeft,
+    isMoving: isWalking,
+    nearestNode: nearestLevel,
+    isCharacterOnNode,
+    samples,
+    decorations,
+  } = useMapNavigation({
+    nodes: levels,
+    scrollRef: scrollContainerRef,
+    onEnterNode: (level) =>
+      navigate(
+        `/level/${level.id}?chapterTitle=${encodeURIComponent(chapterTitle)}&chapter=${chapterId}`,
+      ),
+  });
 
-  const decorations = useRef<ReturnType<typeof generateDecorationPositions>>(
-    generateDecorationPositions(levels),
-  );
-  const { trees, rocks, flowers } = decorations.current;
-
-  const lastUnlockedLevelIndex = levels.reduce(
-    (lastIndex, level, index) => (level.stars !== -1 ? index : lastIndex),
-    0,
-  );
-  const maxReachableSampleIndex =
-    samples.length > 0
-      ? findClosestSampleIndex(samples, levels[lastUnlockedLevelIndex])
-      : 0;
-
-  const startLevel =
-    levels.find((level) => level.stars === 0) ?? levels[lastUnlockedLevelIndex];
-  const initialSampleIndex =
-    samples.length > 0 ? findClosestSampleIndex(samples, startLevel) : 0;
-
-  const characterSampleIndexRef = useRef<number>(initialSampleIndex);
-  const [characterSampleIndex, setCharacterSampleIndex] =
-    useState<number>(initialSampleIndex);
-  const [isFacingLeft, setIsFacingLeft] = useState(false);
-  const [isWalking, setIsWalking] = useState(false);
-  const isFacingLeftRef = useRef(false);
-
-  const characterPosition = samples[characterSampleIndex] ?? {
-    x: levels[0]?.x ?? 0,
-    y: levels[0]?.y ?? 0,
-  };
-
-  const nearestLevelToCharacter = levels.reduce<Level>(
-    (nearest, level) =>
-      Math.abs(level.x - characterPosition.x) <
-      Math.abs(nearest.x - characterPosition.x)
-        ? level
-        : nearest,
-    levels[0],
-  );
-
-  const isCharacterOnNode =
-    nearestLevelToCharacter &&
-    Math.abs(nearestLevelToCharacter.x - characterPosition.x) < NODE_RADIUS;
-
+  const { trees, rocks, flowers } = decorations;
   const svgPathD = buildSvgPathD(levels);
-  const currentProgressLevel = levels.find((level) => level.stars === 0);
-
-  useEffect(() => {
-    if (samples.length === 0) return;
-
-    function gameLoop() {
-      const { left, right } = pressedKeys.current;
-      let characterMoved = false;
-
-      if (right && !left) {
-        const nextIndex = Math.min(
-          characterSampleIndexRef.current + CHARACTER_WALK_SPEED,
-          maxReachableSampleIndex,
-        );
-        if (nextIndex !== characterSampleIndexRef.current) {
-          characterSampleIndexRef.current = nextIndex;
-          setCharacterSampleIndex(nextIndex);
-          if (isFacingLeftRef.current) {
-            isFacingLeftRef.current = false;
-            setIsFacingLeft(false);
-          }
-          characterMoved = true;
-        }
-      } else if (left && !right) {
-        const nextIndex = Math.max(
-          characterSampleIndexRef.current - CHARACTER_WALK_SPEED,
-          0,
-        );
-        if (nextIndex !== characterSampleIndexRef.current) {
-          characterSampleIndexRef.current = nextIndex;
-          setCharacterSampleIndex(nextIndex);
-          if (!isFacingLeftRef.current) {
-            isFacingLeftRef.current = true;
-            setIsFacingLeft(true);
-          }
-          characterMoved = true;
-        }
-      }
-
-      setIsWalking(characterMoved);
-
-      if (
-        characterMoved &&
-        scrollContainerRef.current &&
-        samples[characterSampleIndexRef.current]
-      ) {
-        const containerWidth = scrollContainerRef.current.clientWidth;
-        const targetScrollLeft =
-          samples[characterSampleIndexRef.current].x - containerWidth / 2;
-        scrollContainerRef.current.scrollLeft +=
-          (targetScrollLeft - scrollContainerRef.current.scrollLeft) * 0.08;
-      }
-
-      animationFrameRef.current = requestAnimationFrame(gameLoop);
-    }
-
-    animationFrameRef.current = requestAnimationFrame(gameLoop);
-    return () => cancelAnimationFrame(animationFrameRef.current);
-  }, [samples, maxReachableSampleIndex]);
-
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        pressedKeys.current.left = true;
-      }
-      if (event.key === "ArrowRight") {
-        event.preventDefault();
-        pressedKeys.current.right = true;
-      }
-      if (event.key === "Enter") {
-        const currentPosition = samples[characterSampleIndexRef.current];
-        if (!currentPosition) return;
-        const nearestLevel = levels.reduce<Level>(
-          (nearest, level) =>
-            Math.abs(level.x - currentPosition.x) <
-            Math.abs(nearest.x - currentPosition.x)
-              ? level
-              : nearest,
-          levels[0],
-        );
-        const isOnUnlockedNode =
-          nearestLevel &&
-          nearestLevel.stars !== -1 &&
-          Math.abs(nearestLevel.x - currentPosition.x) < NODE_RADIUS;
-        if (isOnUnlockedNode) {
-          navigate(`/level/${nearestLevel.id}?chapterTitle=${encodeURIComponent(chapterTitle)}&chapter=${searchParams.get("chapter") ?? ""}`);
-        }
-      }
-    }
-
-    function onKeyUp(event: KeyboardEvent) {
-      if (event.key === "ArrowLeft") pressedKeys.current.left = false;
-      if (event.key === "ArrowRight") pressedKeys.current.right = false;
-    }
-
-    window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("keyup", onKeyUp);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("keyup", onKeyUp);
-    };
-  }, [levels, navigate, samples]);
-
-  function onMouseDown(event: React.MouseEvent<HTMLDivElement>) {
-    dragState.current = {
-      active: true,
-      startX: event.pageX - (scrollContainerRef.current?.offsetLeft ?? 0),
-      scrollLeft: scrollContainerRef.current?.scrollLeft ?? 0,
-    };
-    if (scrollContainerRef.current)
-      scrollContainerRef.current.style.cursor = "grabbing";
-  }
-
-  function onMouseMove(event: React.MouseEvent<HTMLDivElement>) {
-    if (!dragState.current.active || !scrollContainerRef.current) return;
-    event.preventDefault();
-    const currentX = event.pageX - scrollContainerRef.current.offsetLeft;
-    scrollContainerRef.current.scrollLeft =
-      dragState.current.scrollLeft -
-      (currentX - dragState.current.startX) * 1.4;
-  }
-
-  function onDragEnd() {
-    dragState.current.active = false;
-    if (scrollContainerRef.current)
-      scrollContainerRef.current.style.cursor = "grab";
-  }
+  const currentProgressLevel = levels.find((l) => l.stars === 0);
 
   return (
     <main className="min-h-screen flex flex-col bg-linear-to-b from-sky-300 via-amber-100 to-emerald-200">
       <style>{CHARACTER_KEYFRAMES}</style>
 
-      <IngameHeader siteName="Level Auswahl" backTo="/chapter-selection" backLabel="KAPITEL" />
+      <IngameHeader
+        siteName="Level Auswahl"
+        backTo="/chapter-selection"
+        backLabel="KAPITEL"
+      />
 
       <div className="flex-1 flex flex-col items-center justify-center py-4">
         <div className="flex items-center w-full gap-2 px-2">
-          <button
-            onClick={() =>
-              scrollContainerRef.current?.scrollBy({
-                left: -320,
-                behavior: "smooth",
-              })
-            }
-            className="shrink-0 font-pixel text-stone-200 bg-stone-700/80 dark:bg-stone-900/80 border-4 border-stone-800 rounded px-3 py-3 hover:brightness-125 active:scale-95 transition-all"
-            style={{ boxShadow: "3px 3px 0 rgba(0,0,0,0.4)" }}
-            aria-label="Scroll left"
-          >
-            ◀
-          </button>
+          <ScrollButton
+            direction="left"
+            onClick={() => scrollContainerRef.current?.scrollBy({ left: -320, behavior: "smooth" })}
+          />
 
           <div
             ref={scrollContainerRef}
@@ -257,84 +84,39 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
             onMouseUp={onDragEnd}
             onMouseLeave={onDragEnd}
           >
-            <div
-              className="relative"
-              style={{ width: MAP_WIDTH, height: MAP_HEIGHT }}
-            >
+            <div className="relative" style={{ width: MAP_WIDTH, height: MAP_HEIGHT }}>
               <svg
                 className="absolute inset-0 pointer-events-none"
                 width={MAP_WIDTH}
                 height={MAP_HEIGHT}
               >
+                {/* Background */}
                 <rect width={MAP_WIDTH} height={MAP_HEIGHT} fill="#3d7a20" />
-                <rect
-                  x={0}
-                  y={0}
-                  width={600}
-                  height={MAP_HEIGHT}
-                  fill="#448c22"
-                  opacity={0.25}
-                />
-                <rect
-                  x={700}
-                  y={0}
-                  width={500}
-                  height={MAP_HEIGHT}
-                  fill="#3a7018"
-                  opacity={0.2}
-                />
-                <rect
-                  x={1300}
-                  y={0}
-                  width={540}
-                  height={MAP_HEIGHT}
-                  fill="#448c22"
-                  opacity={0.22}
-                />
+                <rect x={0}    y={0} width={600} height={MAP_HEIGHT} fill="#448c22" opacity={0.25} />
+                <rect x={700}  y={0} width={500} height={MAP_HEIGHT} fill="#3a7018" opacity={0.20} />
+                <rect x={1300} y={0} width={540} height={MAP_HEIGHT} fill="#448c22" opacity={0.22} />
 
                 <RiverSVG />
 
-                {rocks.map((rock, index) => (
-                  <RockSVG
-                    key={index}
-                    x={rock.x}
-                    y={rock.y}
-                    scale={rock.scale}
-                  />
+                {rocks.map((rock, i) => (
+                  <RockSVG key={i} x={rock.x} y={rock.y} scale={rock.scale} />
                 ))}
-                {flowers.map((flower, index) => (
-                  <FlowerSVG
-                    key={index}
-                    x={flower.x}
-                    y={flower.y}
-                    color={flower.color}
-                  />
+                {flowers.map((flower, i) => (
+                  <FlowerSVG key={i} x={flower.x} y={flower.y} color={flower.color} />
                 ))}
 
-                <path
-                  d={svgPathD}
-                  fill="none"
-                  stroke="#3d2208"
-                  strokeWidth={30}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d={svgPathD}
-                  fill="none"
-                  stroke="#c8922a"
-                  strokeWidth={22}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d={svgPathD}
-                  fill="none"
-                  stroke="#e8c070"
-                  strokeWidth={10}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+                {/* Dirt path (3 layered strokes for depth) */}
+                {(["#3d2208", "#c8922a", "#e8c070"] as const).map((stroke, i) => (
+                  <path
+                    key={stroke}
+                    d={svgPathD}
+                    fill="none"
+                    stroke={stroke}
+                    strokeWidth={[30, 22, 10][i]}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                ))}
 
                 {levels.map((level) => (
                   <PlatformSVG
@@ -345,19 +127,13 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
                     isCurrent={currentProgressLevel?.id === level.id}
                     isLocked={level.stars === -1}
                     isCharacterNearby={
-                      isCharacterOnNode &&
-                      nearestLevelToCharacter?.id === level.id
+                      isCharacterOnNode && nearestLevel?.id === level.id
                     }
                   />
                 ))}
 
-                {trees.map((tree, index) => (
-                  <TreeSVG
-                    key={index}
-                    x={tree.x}
-                    y={tree.y}
-                    scale={tree.scale}
-                  />
+                {trees.map((tree, i) => (
+                  <TreeSVG key={i} x={tree.x} y={tree.y} scale={tree.scale} />
                 ))}
               </svg>
 
@@ -366,12 +142,9 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
                   key={level.id}
                   level={level}
                   isCurrent={currentProgressLevel?.id === level.id}
-                  isCharacterHere={
-                    isCharacterOnNode &&
-                    nearestLevelToCharacter?.id === level.id
-                  }
+                  isCharacterHere={isCharacterOnNode && nearestLevel?.id === level.id}
                   chapterTitle={chapterTitle}
-                  chapterId={searchParams.get("chapter") ?? ""}
+                  chapterId={chapterId}
                 />
               ))}
 
@@ -389,28 +162,16 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
                     willChange: "transform",
                   }}
                 >
-                  <PixelCharacter
-                    facingLeft={isFacingLeft}
-                    isWalking={isWalking}
-                  />
+                  <PixelCharacter facingLeft={isFacingLeft} isWalking={isWalking} />
                 </div>
               )}
             </div>
           </div>
 
-          <button
-            onClick={() =>
-              scrollContainerRef.current?.scrollBy({
-                left: 320,
-                behavior: "smooth",
-              })
-            }
-            className="shrink-0 font-pixel text-stone-200 bg-stone-700/80 dark:bg-stone-900/80 border-4 border-stone-800 rounded px-3 py-3 hover:brightness-125 active:scale-95 transition-all"
-            style={{ boxShadow: "3px 3px 0 rgba(0,0,0,0.4)" }}
-            aria-label="Scroll right"
-          >
-            ▶
-          </button>
+          <ScrollButton
+            direction="right"
+            onClick={() => scrollContainerRef.current?.scrollBy({ left: 320, behavior: "smooth" })}
+          />
         </div>
 
         <p
@@ -435,5 +196,25 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
         <span className="opacity-80">© 2025</span>
       </div>
     </main>
+  );
+}
+
+// ─── Shared scroll arrow button ────────────────────────────────────────────────
+function ScrollButton({
+  direction,
+  onClick,
+}: {
+  direction: "left" | "right";
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="shrink-0 font-pixel text-stone-200 bg-stone-700/80 dark:bg-stone-900/80 border-4 border-stone-800 rounded px-3 py-3 hover:brightness-125 active:scale-95 transition-all"
+      style={{ boxShadow: "3px 3px 0 rgba(0,0,0,0.4)" }}
+      aria-label={direction === "left" ? "Scroll left" : "Scroll right"}
+    >
+      {direction === "left" ? "◀" : "▶"}
+    </button>
   );
 }
