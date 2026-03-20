@@ -1,8 +1,11 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router";
-import { useAuth } from "~/hooks/useAuth";
-import { AuthDialog } from "~/components/AuthDialog";
-import type { AuthMode } from "~/components/AuthDialog";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router";
+import {
+  getAuthFromCookies,
+  isGuestFromCookies,
+  setGuestCookies,
+  clearAuthCookies,
+} from "~/lib/auth-cookies";
 
 const SPLASH_TEXTS = [
   "Lernen macht süchtig!",
@@ -17,7 +20,7 @@ function randomSplash() {
 }
 
 const MAIN_MENU_ITEMS = [
-  { to: "/chapter-selection", label: "Lernen starten", icon: "▶", requiresAuth: true },
+  { to: "/chapter-selection", label: "Lernen starten", icon: "▶", requiresAuth: true  },
   { to: "/fortschritt",       label: "Fortschritt",    icon: "📊", requiresAuth: false },
   { to: "/rangliste",         label: "Rangliste",      icon: "🏆", requiresAuth: false },
 ] as const;
@@ -32,30 +35,27 @@ const BUTTON_STYLE = {
   boxShadow: "inset 2px 2px 0 rgba(255,255,255,0.15), 4px 4px 0 rgba(0,0,0,0.4)",
 };
 
+const AUTH_LINK_CLASS =
+  "font-pixel text-sm md:text-base text-stone-700 dark:text-stone-300 hover:text-amber-600 dark:hover:text-amber-400 py-2 px-3 rounded border-2 border-stone-600 hover:border-amber-500/50 transition-colors cursor-pointer text-center";
+
 export function Welcome() {
-  const [splash, setSplash] = useState(SPLASH_TEXTS[0]);
-  const [dialogMode, setDialogMode] = useState<AuthMode | null>(null);
+  const [splash] = useState(() => randomSplash());
+  const navigate = useNavigate();
 
-  const { isAuth, loading, error, clearError, login, register, loginAsGuest, logout } =
-    useAuth();
+  const [isAuth, setIsAuth] = useState(() => {
+    if (typeof document === "undefined") return false;
+    return getAuthFromCookies() !== null || isGuestFromCookies();
+  });
 
-  useEffect(() => {
-    setSplash(randomSplash());
-  }, []);
-
-  function openDialog(mode: AuthMode) {
-    clearError();
-    setDialogMode(mode);
+  function handleGuestLogin() {
+    setGuestCookies();
+    setIsAuth(true);
+    navigate("/chapter-selection");
   }
 
-  function closeDialog() {
-    clearError();
-    setDialogMode(null);
-  }
-
-  function handleSubmit(userName: string, password: string) {
-    if (dialogMode === "login") login(userName, password);
-    else if (dialogMode === "register") register(userName, password);
+  function handleLogout() {
+    clearAuthCookies();
+    setIsAuth(false);
   }
 
   return (
@@ -68,24 +68,28 @@ export function Welcome() {
         {splash}
       </div>
 
-      {/* Auth button */}
+      {/* Auth controls */}
       <div className="absolute top-8 left-8 md:top-12 md:left-12 z-10">
         {isAuth ? (
           <button
             type="button"
-            onClick={logout}
-            className="font-pixel text-sm md:text-base text-stone-700 dark:text-stone-300 hover:text-amber-600 dark:hover:text-amber-400 py-2 px-3 rounded border-2 border-stone-600 hover:border-amber-500/50 transition-colors cursor-pointer"
+            onClick={handleLogout}
+            className={AUTH_LINK_CLASS}
           >
             Abmelden
           </button>
         ) : (
-          <button
-            type="button"
-            onClick={() => openDialog("login")}
-            className="font-pixel text-sm md:text-base text-stone-700 dark:text-stone-300 hover:text-amber-600 dark:hover:text-amber-400 py-2 px-3 rounded border-2 border-stone-600 hover:border-amber-500/50 transition-colors cursor-pointer"
-          >
-            Anmelden / Registrierung
-          </button>
+          <div className="flex flex-col gap-2">
+            <Link to="/login"    className={AUTH_LINK_CLASS}>Anmelden</Link>
+            <Link to="/register" className={AUTH_LINK_CLASS}>Registrieren</Link>
+            <button
+              type="button"
+              onClick={handleGuestLogin}
+              className={AUTH_LINK_CLASS}
+            >
+              Als Gast fortfahren
+            </button>
+          </div>
         )}
       </div>
 
@@ -109,16 +113,11 @@ export function Welcome() {
         <nav className="w-full max-w-[320px] space-y-3">
           {MAIN_MENU_ITEMS.map(({ to, label, icon, requiresAuth }) =>
             requiresAuth && !isAuth ? (
-              <button
-                key={to}
-                type="button"
-                onClick={() => openDialog("login")}
-                className={BUTTON_CLASS}
-                style={BUTTON_STYLE}
-              >
+              // Redirect unauthenticated users to the login page
+              <Link key={to} to="/login" className={BUTTON_CLASS} style={BUTTON_STYLE}>
                 <span className="mr-2">{icon}</span>
                 {label}
-              </button>
+              </Link>
             ) : (
               <Link key={to} to={to} className={BUTTON_CLASS} style={BUTTON_STYLE}>
                 <span className="mr-2">{icon}</span>
@@ -145,17 +144,6 @@ export function Welcome() {
         <span>Learning Gamification v1.0</span>
         <span className="opacity-80">© 2025</span>
       </div>
-
-      <AuthDialog
-        mode={dialogMode ?? "login"}
-        isOpen={dialogMode !== null}
-        onClose={closeDialog}
-        onSubmit={handleSubmit}
-        onSwitchMode={() => openDialog(dialogMode === "login" ? "register" : "login")}
-        onGuestLogin={loginAsGuest}
-        error={error}
-        loading={loading}
-      />
     </main>
   );
 }

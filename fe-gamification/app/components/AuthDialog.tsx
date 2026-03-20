@@ -1,4 +1,4 @@
-import type { FormEvent } from "react";
+import { Form } from "react-router";
 
 export type AuthMode = "login" | "register";
 
@@ -11,6 +11,7 @@ const MODE_CONFIG = {
     passwordAutoComplete: "current-password" as const,
     switchPrompt: "Noch kein Konto?",
     switchLabel: "Registrieren",
+    intent: "login" as const,
   },
   register: {
     titleId: "auth-dialog-register-title",
@@ -19,6 +20,7 @@ const MODE_CONFIG = {
     passwordAutoComplete: "new-password" as const,
     switchPrompt: "Bereits Konto?",
     switchLabel: "Anmelden",
+    intent: "register" as const,
   },
 } as const;
 
@@ -26,38 +28,28 @@ type AuthDialogProps = {
   mode: AuthMode;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (userName: string, password: string) => void;
   onSwitchMode: () => void;
   /** Only rendered in "login" mode */
   onGuestLogin?: () => void;
   error: string | null;
   loading: boolean;
+  /** Route action target for the Form — defaults to "/" */
+  action?: string;
 };
 
 export function AuthDialog({
   mode,
   isOpen,
   onClose,
-  onSubmit,
   onSwitchMode,
   onGuestLogin,
   error,
   loading,
+  action = "/",
 }: AuthDialogProps) {
   if (!isOpen) return null;
 
   const cfg = MODE_CONFIG[mode];
-
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const userName = (
-      form.elements.namedItem("userName") as HTMLInputElement
-    )?.value?.trim();
-    const password = (form.elements.namedItem("password") as HTMLInputElement)
-      ?.value;
-    if (userName && password) onSubmit(userName, password);
-  }
 
   return (
     <>
@@ -80,7 +72,10 @@ export function AuthDialog({
             {cfg.title}
           </h2>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          {/* React Router Form — submits to the route action for backend integration */}
+          <Form method="post" action={action} className="flex flex-col gap-5">
+            <input type="hidden" name="intent" value={cfg.intent} />
+
             <div>
               <label
                 htmlFor={`${mode}-userName`}
@@ -165,7 +160,7 @@ export function AuthDialog({
                 </button>
               </div>
             </div>
-          </form>
+          </Form>
         </div>
       </div>
     </>
