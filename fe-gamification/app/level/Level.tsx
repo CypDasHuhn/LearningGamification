@@ -200,7 +200,11 @@ export function Level({ questionSetId, title, chapterTitle, questionList }: Leve
         flexDirection: "column",
       }}
     >
-      <IngameHeader siteName={chapterTitle || title} backTo="/level-selection" backLabel="LEVEL AUSWAHL" />
+      <IngameHeader
+        siteName={chapterTitle ? `${chapterTitle} - Level ${questionSetId}` : title}
+        backTo="/level-selection"
+        backLabel="LEVEL AUSWAHL"
+      />
       <div
         style={{
           flex: 1,
