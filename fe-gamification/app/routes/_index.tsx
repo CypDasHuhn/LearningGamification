@@ -1,10 +1,14 @@
 import type { Route } from "./+types/_index";
 import { Welcome } from "../welcome/welcome";
+import { asyncPipe } from "~/utils/async-pipe";
+import { routeByAuthIntent, withRegisterData } from "~/functions/register-pipe";
+
+export const action = asyncPipe(withRegisterData, routeByAuthIntent);
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "Spaß mit Lernquiz!" },
+    { name: "description", content: "Spaß mit Lernquiz!" },
   ];
 }
 
