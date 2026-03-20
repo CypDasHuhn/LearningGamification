@@ -1,9 +1,8 @@
-import type { FormEvent } from "react";
+import { Form } from "react-router";
 
 export function LoginDialog({
   isOpen,
   onClose,
-  onSubmit,
   onSwitchToRegister,
   onGuestLogin,
   error,
@@ -11,21 +10,12 @@ export function LoginDialog({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (userName: string, password: string) => void;
   onSwitchToRegister: () => void;
   onGuestLogin: () => void;
   error: string | null;
   loading: boolean;
 }) {
   if (!isOpen) return null;
-
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const userName = (form.elements.namedItem("userName") as HTMLInputElement)?.value?.trim();
-    const password = (form.elements.namedItem("password") as HTMLInputElement)?.value;
-    if (userName && password) onSubmit(userName, password);
-  }
 
   return (
     <>
@@ -47,7 +37,8 @@ export function LoginDialog({
           >
             Anmelden
           </h2>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <Form method="post" action="/" className="flex flex-col gap-5">
+            <input type="hidden" name="intent" value="login" />
             <div>
               <label
                 htmlFor="login-userName"
@@ -83,7 +74,10 @@ export function LoginDialog({
               />
             </div>
             {error && (
-              <p className="text-sm text-red-600 dark:text-red-400 mt-1" role="alert">
+              <p
+                className="text-sm text-red-600 dark:text-red-400 mt-1"
+                role="alert"
+              >
                 {error}
               </p>
             )}
@@ -122,7 +116,7 @@ export function LoginDialog({
                 </button>
               </div>
             </div>
-          </form>
+          </Form>
         </div>
       </div>
     </>

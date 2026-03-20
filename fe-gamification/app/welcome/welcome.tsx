@@ -1,15 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { LoginDialog } from "~/components/LoginDialog";
-import { RegisterDialog } from "~/components/RegisterDialog";
 import {
   getAuthFromCookies,
   isGuestFromCookies,
-  setAuthCookies,
   setGuestCookies,
   clearAuthCookies,
 } from "~/lib/auth-cookies";
-import { login as apiLogin, register as apiRegister } from "~/lib/api";
 
 const SPLASH_TEXTS = [
   "Lernen macht süchtig!",
@@ -43,76 +39,18 @@ const buttonStyle = {
 };
 
 export function Welcome() {
-  const [splash, setSplash] = useState(SPLASH_TEXTS[0]);
+  const [splash] = useState(() => randomSplash());
   const navigate = useNavigate();
 
-  useEffect(() => {
-    setSplash(randomSplash());
-  }, []);
-  const [isAuth, setIsAuth] = useState(false);
-  const [loginOpen, setLoginOpen] = useState(false);
-  const [registerOpen, setRegisterOpen] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [authLoading, setAuthLoading] = useState(false);
-
-  useEffect(() => {
-    setIsAuth(getAuthFromCookies() !== null || isGuestFromCookies());
-  }, []);
-
-  function openAuthDialog() {
-    setAuthError(null);
-    setLoginOpen(true);
-    setRegisterOpen(false);
-  }
-
-  function switchToRegister() {
-    setAuthError(null);
-    setRegisterOpen(true);
-    setLoginOpen(false);
-  }
-
-  function switchToLogin() {
-    setAuthError(null);
-    setLoginOpen(true);
-    setRegisterOpen(false);
-  }
-
-  function handleLogin(userName: string, password: string) {
-    setAuthLoading(true);
-    setAuthError(null);
-    apiLogin(userName, password)
-      .then((data) => {
-        setAuthCookies(data);
-        setIsAuth(true);
-        setLoginOpen(false);
-        navigate("/chapter-selection");
-      })
-      .catch((err) => {
-        setAuthError(err instanceof Error ? err.message : "Anmeldung fehlgeschlagen");
-      })
-      .finally(() => setAuthLoading(false));
-  }
-
-  function handleRegister(userName: string, password: string) {
-    setAuthLoading(true);
-    setAuthError(null);
-    apiRegister(userName, password)
-      .then((data) => {
-        setAuthCookies(data);
-        setIsAuth(true);
-        setRegisterOpen(false);
-        navigate("/chapter-selection");
-      })
-      .catch((err) => {
-        setAuthError(err instanceof Error ? err.message : "Registrierung fehlgeschlagen");
-      })
-      .finally(() => setAuthLoading(false));
-  }
+  const [isAuth, setIsAuth] = useState(() => {
+    // SSR-Schutz: `document` existiert auf dem Server nicht.
+    if (typeof document === "undefined") return false;
+    return getAuthFromCookies() !== null || isGuestFromCookies();
+  });
 
   function handleGuestLogin() {
     setGuestCookies();
     setIsAuth(true);
-    setLoginOpen(false);
     navigate("/chapter-selection");
   }
 
@@ -142,13 +80,27 @@ export function Welcome() {
             Abmelden
           </button>
         ) : (
-          <button
-            type="button"
-            onClick={openAuthDialog}
-            className="font-pixel text-sm md:text-base text-stone-700 dark:text-stone-300 hover:text-amber-600 dark:hover:text-amber-400 py-2 px-3 rounded border-2 border-stone-600 hover:border-amber-500/50 transition-colors cursor-pointer"
-          >
-            Anmelden / Registrierung
-          </button>
+          <div className="flex flex-col gap-2">
+            <Link
+              to="/login"
+              className="font-pixel text-sm md:text-base text-stone-700 dark:text-stone-300 hover:text-amber-600 dark:hover:text-amber-400 py-2 px-3 rounded border-2 border-stone-600 hover:border-amber-500/50 transition-colors cursor-pointer text-center"
+            >
+              Anmelden
+            </Link>
+            <Link
+              to="/register"
+              className="font-pixel text-sm md:text-base text-stone-700 dark:text-stone-300 hover:text-amber-600 dark:hover:text-amber-400 py-2 px-3 rounded border-2 border-stone-600 hover:border-amber-500/50 transition-colors cursor-pointer text-center"
+            >
+              Registrieren
+            </Link>
+            <button
+              type="button"
+              onClick={handleGuestLogin}
+              className="font-pixel text-sm md:text-base text-stone-700 dark:text-stone-300 hover:text-amber-600 dark:hover:text-amber-400 py-2 px-3 rounded border-2 border-stone-600 hover:border-amber-500/50 transition-colors cursor-pointer text-center"
+            >
+              Als Gast fortfahren
+            </button>
+          </div>
         )}
       </div>
 
@@ -174,16 +126,15 @@ export function Welcome() {
         <nav className="w-full max-w-[320px] space-y-3">
           {mainMenuItems.map(({ to, label, icon }) =>
             to === "/chapter-selection" && !isAuth ? (
-              <button
+              <Link
                 key={to}
-                type="button"
-                onClick={openAuthDialog}
                 className={buttonClass}
                 style={buttonStyle}
+                to="/login"
               >
                 <span className="mr-2">{icon}</span>
                 {label}
-              </button>
+              </Link>
             ) : (
               <Link
                 key={to}
@@ -227,24 +178,6 @@ export function Welcome() {
         <span>Learning Gamification v1.0</span>
         <span className="opacity-80">© 2025</span>
       </div>
-
-      <LoginDialog
-        isOpen={loginOpen}
-        onClose={() => { setLoginOpen(false); setAuthError(null); }}
-        onSubmit={handleLogin}
-        onSwitchToRegister={switchToRegister}
-        onGuestLogin={handleGuestLogin}
-        error={authError}
-        loading={authLoading}
-      />
-      <RegisterDialog
-        isOpen={registerOpen}
-        onClose={() => { setRegisterOpen(false); setAuthError(null); }}
-        onSubmit={handleRegister}
-        onSwitchToLogin={switchToLogin}
-        error={authError}
-        loading={authLoading}
-      />
     </main>
   );
 }
