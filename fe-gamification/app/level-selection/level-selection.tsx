@@ -183,7 +183,7 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
           nearestLevel.stars !== -1 &&
           Math.abs(nearestLevel.x - currentPosition.x) < NODE_RADIUS;
         if (isOnUnlockedNode) {
-          navigate(`/level/${nearestLevel.id}?chapterTitle=${encodeURIComponent(chapterTitle)}`);
+          navigate(`/level/${nearestLevel.id}?chapterTitle=${encodeURIComponent(chapterTitle)}&chapter=${searchParams.get("chapter") ?? ""}`);
         }
       }
     }
@@ -371,6 +371,7 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
                     nearestLevelToCharacter?.id === level.id
                   }
                   chapterTitle={chapterTitle}
+                  chapterId={searchParams.get("chapter") ?? ""}
                 />
               ))}
 

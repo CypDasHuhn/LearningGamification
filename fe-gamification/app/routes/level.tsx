@@ -19,17 +19,19 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   const url = new URL(request.url);
   const chapterTitle = url.searchParams.get("chapterTitle") ?? "";
+  const chapterId = url.searchParams.get("chapter") ?? "";
 
-  return { levelData, chapterTitle };
+  return { levelData, chapterTitle, chapterId };
 }
 
 export default function LevelRoute() {
-  const { levelData, chapterTitle } = useLoaderData<typeof loader>();
+  const { levelData, chapterTitle, chapterId } = useLoaderData<typeof loader>();
   return (
     <Level
       questionSetId={levelData.questionSetId}
       title={levelData.title}
       chapterTitle={chapterTitle}
+      chapterId={chapterId}
       questionList={levelData.questions}
     />
   );

@@ -12,6 +12,7 @@ type LevelProps = {
   questionSetId: number;
   title: string;
   chapterTitle: string;
+  chapterId?: string;
   questionList: QuestionResponse[];
 };
 
@@ -24,10 +25,12 @@ function ResultScreen({
   title,
   correctCount,
   total,
+  chapterId,
 }: {
   title: string;
   correctCount: number;
   total: number;
+  chapterId?: string;
 }) {
   return (
     <div
@@ -59,7 +62,7 @@ function ResultScreen({
         }}
       >
         <Link
-          to="/level-selection"
+          to={chapterId ? `/level-selection?chapter=${chapterId}` : "/level-selection"}
           style={{
             padding: "10px 18px",
             background: "#0f172a",
@@ -73,7 +76,7 @@ function ResultScreen({
           ← ZURÜCK
         </Link>
         <Link
-          to="/level-selection"
+          to={chapterId ? `/level-selection?chapter=${chapterId}` : "/level-selection"}
           style={{
             padding: "10px 18px",
             background: "#166534",
@@ -91,7 +94,7 @@ function ResultScreen({
   );
 }
 
-export function Level({ questionSetId, title, chapterTitle, questionList }: LevelProps) {
+export function Level({ questionSetId, title, chapterTitle, chapterId = "", questionList }: LevelProps) {
   const total = questionList.length;
 
   const [state, setState] = useState<LevelPhase>({
@@ -202,7 +205,7 @@ export function Level({ questionSetId, title, chapterTitle, questionList }: Leve
     >
       <IngameHeader
         siteName={chapterTitle ? `${chapterTitle} - Level ${questionSetId}` : title}
-        backTo="/level-selection"
+        backTo={chapterId ? `/level-selection?chapter=${chapterId}` : "/level-selection"}
         backLabel="LEVEL AUSWAHL"
       />
       <div
@@ -222,6 +225,7 @@ export function Level({ questionSetId, title, chapterTitle, questionList }: Leve
             title={title}
             correctCount={state.correctCount}
             total={state.total}
+            chapterId={chapterId}
           />
         )}
       </div>

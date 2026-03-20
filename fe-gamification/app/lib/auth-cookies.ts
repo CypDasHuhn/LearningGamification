@@ -7,17 +7,14 @@ const COOKIE_TOKEN = "auth_token";
 const COOKIE_USER_ID = "auth_user_id";
 const COOKIE_USER_NAME = "auth_user_name";
 const COOKIE_GUEST = "auth_guest";
-const COOKIE_MAX_AGE_DAYS = 7;
-
 export interface AuthCookies {
   token: string;
   userId: number;
   userName: string;
 }
 
-function setCookie(name: string, value: string, days: number = COOKIE_MAX_AGE_DAYS) {
-  const maxAge = days * 24 * 60 * 60;
-  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+function setCookie(name: string, value: string) {
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; SameSite=Lax`;
 }
 
 function getCookie(name: string): string | null {
