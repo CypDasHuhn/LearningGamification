@@ -8,6 +8,7 @@ import {
   FeedbackBar,
 } from "./QuestionShared";
 
+/** Data model for a true/false question. */
 export type TrueFalseQuestion = {
   statement: string;
   correctAnswer: boolean;
@@ -24,6 +25,7 @@ type TrueFalseQuestionProps = {
   onSubmit?: (selectedIsTrue: boolean) => void;
 };
 
+/** Renders a true/false question card with WAHR / FALSCH buttons. */
 export function TrueFalseQuestion({
   levelNum,
   questionNum,

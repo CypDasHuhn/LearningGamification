@@ -1,5 +1,6 @@
 type TreeProps = { x: number; y: number; scale?: number };
 
+/** Four-lobe pixel tree rendered as overlapping dark-green circles. */
 export function TreeSVG({ x, y, scale = 1 }: TreeProps) {
   const lobeRadius = 11 * scale;
   const lobeOffset = lobeRadius * 1.05;
@@ -16,6 +17,7 @@ export function TreeSVG({ x, y, scale = 1 }: TreeProps) {
 
 type RockProps = { x: number; y: number; scale?: number };
 
+/** Flat ellipse rock with a highlight spot. */
 export function RockSVG({ x, y, scale = 1 }: RockProps) {
   return (
     <g>
@@ -40,6 +42,7 @@ export function RockSVG({ x, y, scale = 1 }: RockProps) {
 
 type FlowerProps = { x: number; y: number; color: string };
 
+/** Four-petal flower with a yellow centre dot. */
 export function FlowerSVG({ x, y, color }: FlowerProps) {
   return (
     <g opacity={0.85}>
@@ -60,6 +63,11 @@ export function FlowerSVG({ x, y, color }: FlowerProps) {
   );
 }
 
+/**
+ * Decorative river crossing the level-selection map.
+ * Rendered as two overlapping cubic-Bezier filled paths with wave highlights
+ * and lily-pad ellipses.
+ */
 export function RiverSVG() {
   const riverHighlightXPositions = [80, 450, 820, 1200, 1580];
   const lilyPadXPositions = [182, 704, 1108, 1648];

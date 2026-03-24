@@ -2,38 +2,22 @@ import { Link } from "react-router";
 import type { Level } from "../../types";
 import { NODE_RADIUS } from "../../mapConstants";
 
-function StarRow({ starsEarned }: { starsEarned: number }) {
-  const starValues = [1, 2, 3];
-  return (
-    <div className="flex gap-1">
-      {starValues.map((starValue) => (
-        <span
-          key={starValue}
-          style={{
-            fontSize: "20px",
-            color: starValue <= starsEarned ? "#fbbf24" : "#44403c",
-            textShadow: starValue <= starsEarned ? "1px 1px 0 #000" : "none",
-          }}
-        >
-          ★
-        </span>
-      ))}
-    </div>
-  );
-}
-
+/** Props for {@link LevelNode}. */
 type LevelNodeProps = {
   level: Level;
-  isCurrent: boolean;
-  isCharacterHere: boolean;
   chapterTitle?: string;
   chapterId?: string;
 };
 
+/**
+ * HTML overlay rendered above each level platform node.
+ *
+ * Shows a lock emoji for locked levels or a clickable level-number link for
+ * unlocked ones. Visual state (highlight rings, glow) is handled by the
+ * underlying {@link PlatformSVG} in the SVG layer.
+ */
 export function LevelNode({
   level,
-  isCurrent,
-  isCharacterHere,
   chapterTitle = "",
   chapterId = "",
 }: LevelNodeProps) {

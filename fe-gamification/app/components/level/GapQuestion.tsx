@@ -6,18 +6,23 @@ import {
   INSET_SHADOW,
   QuestionHeader,
   FeedbackBar,
+  type ButtonState,
+  getButtonColors,
 } from "./QuestionShared";
 
+/** A single token in a code-display line: either literal text or a fill-in gap. */
 export type CodeToken =
   | { type: "text"; text: string; color?: string }
   | { type: "gap"; gapId: number };
 
+/** The correct answer and distractors for one gap within a {@link GapFillQuestion}. */
 export type GapAnswer = {
   gapId: number;
   options: string[];
   correctIndex: number;
 };
 
+/** Data model for a gap-fill (cloze) question. */
 export type GapFillQuestion = {
   instruction: string;
   codeLines: CodeToken[][];
@@ -71,37 +76,12 @@ function OptionButton({
   isCorrect,
   onClick,
 }: OptionButtonProps) {
-  const bg =
-    isCorrect === true
-      ? COLORS.correctBg
-      : isCorrect === false
-        ? COLORS.wrongBg
-        : isActive
-          ? COLORS.selectedBg
-          : COLORS.bgMid;
-  const borderColor =
-    isCorrect === true
-      ? COLORS.correctBorder
-      : isCorrect === false
-        ? COLORS.wrongBorder
-        : isActive
-          ? COLORS.selectedBorder
-          : COLORS.rim2;
-  const textColor =
-    isCorrect === true
-      ? COLORS.correctText
-      : isCorrect === false
-        ? COLORS.wrongText
-        : isActive
-          ? COLORS.selectedText
-          : COLORS.textMid;
-
-  const animStyle: React.CSSProperties =
-    isCorrect === true
-      ? { animation: "answerCorrect 0.4s ease" }
-      : isCorrect === false
-        ? { animation: "answerWrong 0.4s ease" }
-        : {};
+  const state: ButtonState =
+    isCorrect === true  ? "correct"  :
+    isCorrect === false ? "wrong"    :
+    isActive            ? "selected" :
+    "idle";
+  const { bg, borderColor, textColor, animStyle } = getButtonColors(state);
 
   return (
     <button
@@ -188,6 +168,10 @@ function GapChip({ value, state, isActive, onClick }: GapChipProps) {
   );
 }
 
+/**
+ * Renders a gap-fill (cloze) question card. The user selects an answer for
+ * each gap from a list of options below the code display.
+ */
 export function GapFillQuestion({
   levelNum,
   questionNum,

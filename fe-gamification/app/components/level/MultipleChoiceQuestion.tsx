@@ -6,8 +6,11 @@ import {
   INSET_SHADOW,
   QuestionHeader,
   FeedbackBar,
+  type ButtonState,
+  getButtonColors,
 } from "./QuestionShared";
 
+/** Data model for a multiple-choice question (single or multi-select). */
 export type MultipleChoiceQuestion = {
   question: string;
   options: string[];
@@ -25,8 +28,7 @@ type MultipleChoiceQuestionProps = {
   onSubmit?: (selectedIndices: number[]) => void;
 };
 
-type ButtonState = "idle" | "selected" | "correct" | "wrong" | "missed";
-
+/** Returns "A", "B", … "Z" for indices 0-25, then "27", "28", … thereafter. */
 function optionLabel(index: number): string {
   return index < 26 ? String.fromCharCode(65 + index) : String(index + 1);
 }
@@ -46,48 +48,8 @@ function OptionButton({
   isMulti,
   onClick,
 }: OptionButtonProps) {
-  const bg =
-    state === "correct"
-      ? COLORS.correctBg
-      : state === "wrong"
-        ? COLORS.wrongBg
-        : state === "missed"
-          ? "#1a1000"
-          : state === "selected"
-            ? COLORS.selectedBg
-            : COLORS.bgMid;
-
-  const borderColor =
-    state === "correct"
-      ? COLORS.correctBorder
-      : state === "wrong"
-        ? COLORS.wrongBorder
-        : state === "missed"
-          ? COLORS.amberDark
-          : state === "selected"
-            ? COLORS.selectedBorder
-            : COLORS.rim2;
-
-  const textColor =
-    state === "correct"
-      ? COLORS.correctText
-      : state === "wrong"
-        ? COLORS.wrongText
-        : state === "missed"
-          ? COLORS.amber
-          : state === "selected"
-            ? COLORS.selectedText
-            : COLORS.textMid;
-
-  const isLocked =
-    state === "correct" || state === "wrong" || state === "missed";
-
-  const animStyle: React.CSSProperties =
-    state === "correct"
-      ? { animation: "answerCorrect 0.4s ease" }
-      : state === "wrong"
-        ? { animation: "answerWrong 0.4s ease" }
-        : {};
+  const { bg, borderColor, textColor, animStyle } = getButtonColors(state);
+  const isLocked = state === "correct" || state === "wrong" || state === "missed";
 
   return (
     <button
@@ -154,6 +116,10 @@ function OptionButton({
   );
 }
 
+/**
+ * Renders a multiple-choice question card supporting both single-select and
+ * multi-select modes. `correctIndices.length > 1` activates multi-select.
+ */
 export function MultipleChoiceQuestion({
   levelNum,
   questionNum,

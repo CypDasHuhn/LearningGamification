@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import { Link, useNavigate, redirect, useLoaderData } from "react-router";
 import { IngameHeader } from "~/components/ingame-header";
 import {
@@ -7,18 +7,20 @@ import {
 } from "~/lib/auth-cookies";
 import { apiGetServer } from "~/lib/api-server";
 import type { ThemeResponse } from "~/lib/api";
+import { useGameLoop } from "~/hooks/useGameLoop";
+import { useDragScroll } from "~/hooks/useDragScroll";
 
 import type { Level } from "../components/types";
 import {
   MAP_WIDTH,
   MAP_HEIGHT,
   NODE_RADIUS,
-  CHARACTER_WALK_SPEED,
 } from "../components/mapConstants";
 import { generateDecorationPositions } from "../components/design/positions/mapDecorations";
 import {
   buildPathSamples,
   findClosestSampleIndex,
+  findNearestByX,
 } from "../components/design/positions/pathUtils";
 import {
   TreeSVG,
@@ -27,15 +29,22 @@ import {
 } from "../components/design/structures/MapDecorationsSVG";
 import { PlatformSVG } from "../components/design/structures/PlatformSVG";
 
-// All chapters share the same Y so they sit on the flat runway centerline
+// All chapters share the same Y so they sit on the flat runway centerline.
 const RUNWAY_Y = 215;
 
 const FALLBACK_CHAPTERS: Level[] = [
-  { id: 1, x: 300, y: RUNWAY_Y, stars: 1, title: "Einführung" },
-  { id: 2, x: 920, y: RUNWAY_Y, stars: 0, title: "Variablen" },
+  { id: 1, x: 300,  y: RUNWAY_Y, stars: 1,  title: "Einführung" },
+  { id: 2, x: 920,  y: RUNWAY_Y, stars: 0,  title: "Variablen" },
   { id: 3, x: 1540, y: RUNWAY_Y, stars: -1, title: "Schleifen" },
 ];
 
+/**
+ * Converts the API theme list to the flat `Level[]` format used by the map.
+ * Falls back to {@link FALLBACK_CHAPTERS} when the list is empty.
+ *
+ * @param themes - Themes returned by `GET /themes`.
+ * @returns Chapter level array with fixed x-positions and progressive unlock state.
+ */
 function themesToChapters(themes: ThemeResponse[]): Level[] {
   if (themes.length === 0) return FALLBACK_CHAPTERS;
   const xPositions = [300, 920, 1540];
@@ -48,23 +57,25 @@ function themesToChapters(themes: ThemeResponse[]): Level[] {
   }));
 }
 
+/**
+ * Server loader — redirects unauthenticated (non-guest) visitors to `/` and
+ * fetches the theme list to populate the runway map.
+ */
 export async function loader({ request }: { request: Request }) {
   const cookieHeader = request.headers.get("Cookie");
-  const hasAuth = parseAuthFromCookieHeader(cookieHeader) !== null;
-  const isGuest = isGuestFromCookieHeader(cookieHeader);
-  if (!hasAuth && !isGuest) {
-    return redirect("/");
-  }
-  const themes = await apiGetServer<ThemeResponse[]>(cookieHeader, "/themes");
+  const hasAuth  = parseAuthFromCookieHeader(cookieHeader) !== null;
+  const isGuest  = isGuestFromCookieHeader(cookieHeader);
+  if (!hasAuth && !isGuest) return redirect("/");
+  const themes   = await apiGetServer<ThemeResponse[]>(cookieHeader, "/themes");
   const chapters = themes ? themesToChapters(themes) : FALLBACK_CHAPTERS;
   return { chapters };
 }
 
 // ─── Runway dimensions ────────────────────────────────────────────────────────
-const RW_TOP    = 181;          // top of asphalt
-const RW_BOTTOM = 249;          // bottom of asphalt
-const RW_HEIGHT = RW_BOTTOM - RW_TOP;  // 68 px
-const RW_CENTER = (RW_TOP + RW_BOTTOM) / 2; // 215
+const RW_TOP    = 181;
+const RW_BOTTOM = 249;
+const RW_HEIGHT = RW_BOTTOM - RW_TOP;
+const RW_CENTER = (RW_TOP + RW_BOTTOM) / 2;
 
 // ─── Jet sprite ───────────────────────────────────────────────────────────────
 const JET_H = 36;
@@ -76,12 +87,13 @@ const JET_KEYFRAMES = `
 }
 `;
 
+/** CSS div-based private jet sprite used on the chapter-selection runway. */
 function JetSprite({
   facingLeft = false,
-  isMoving = false,
+  isMoving   = false,
 }: {
   facingLeft?: boolean;
-  isMoving?: boolean;
+  isMoving?:   boolean;
 }) {
   return (
     <div
@@ -122,11 +134,8 @@ function JetSprite({
 }
 
 // ─── Chapter node overlay ─────────────────────────────────────────────────────
-function ChapterNode({
-  chapter,
-}: {
-  chapter: Level;
-}) {
+/** Clickable label overlay rendered above each chapter platform node. */
+function ChapterNode({ chapter }: { chapter: Level }) {
   const isLocked = chapter.stars === -1;
 
   return (
@@ -180,6 +189,7 @@ function ChapterNode({
 }
 
 // ─── Runway SVG ───────────────────────────────────────────────────────────────
+/** SVG runway strip with edge lines, center dashes, and touchdown zone markings. */
 function RunwaySVG({ chapters }: { chapters: Level[] }) {
   const dashCount = Math.ceil(MAP_WIDTH / 50);
   const dashW = 32;
@@ -195,8 +205,8 @@ function RunwaySVG({ chapters }: { chapters: Level[] }) {
       {/* Top highlight */}
       <rect x={0} y={RW_TOP} width={MAP_WIDTH} height={6} fill="rgba(255,255,255,0.04)" />
       {/* White edge lines */}
-      <rect x={0} y={RW_TOP}      width={MAP_WIDTH} height={5} fill="white" opacity={0.85} />
-      <rect x={0} y={RW_BOTTOM - 5} width={MAP_WIDTH} height={5} fill="white" opacity={0.85} />
+      <rect x={0} y={RW_TOP}          width={MAP_WIDTH} height={5} fill="white" opacity={0.85} />
+      <rect x={0} y={RW_BOTTOM - 5}   width={MAP_WIDTH} height={5} fill="white" opacity={0.85} />
 
       {/* Yellow center dashes */}
       {Array.from({ length: dashCount }, (_, i) => (
@@ -216,12 +226,12 @@ function RunwaySVG({ chapters }: { chapters: Level[] }) {
       {chapters.map((ch) =>
         ([-1, 1] as const).map((side) =>
           [0, 1, 2, 3].map((row) => {
-            const blockH = 9;
-            const gap = 3;
-            const totalH = 4 * blockH + 3 * gap; // 45 px
-            const startY = RW_CENTER - totalH / 2;
-            const bx = side === -1 ? ch.x - 38 : ch.x + 28;
-            const by = startY + row * (blockH + gap);
+            const blockH  = 9;
+            const gap     = 3;
+            const totalH  = 4 * blockH + 3 * gap;
+            const startY  = RW_CENTER - totalH / 2;
+            const bx      = side === -1 ? ch.x - 38 : ch.x + 28;
+            const by      = startY + row * (blockH + gap);
             return (
               <rect
                 key={`${ch.id}-${side}-${row}`}
@@ -242,13 +252,16 @@ function RunwaySVG({ chapters }: { chapters: Level[] }) {
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
+/**
+ * Chapter-selection map screen.
+ *
+ * Renders a runway where the user taxis a private jet to any unlocked chapter
+ * node and presses Enter (or clicks the node) to enter that chapter's
+ * level-selection screen.
+ */
 export default function ChapterSelection() {
   const { chapters } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const dragState = useRef({ active: false, startX: 0, scrollLeft: 0 });
-  const animationFrameRef = useRef<number>(0);
-  const pressedKeys = useRef({ left: false, right: false });
 
   const pathSamples = useRef<{ x: number; y: number }[]>([]);
   if (pathSamples.current.length === 0 && chapters.length > 1) {
@@ -270,124 +283,53 @@ export default function ChapterSelection() {
       ? findClosestSampleIndex(samples, chapters[lastUnlockedIndex])
       : 0;
 
-  const startChapter = chapters.find((c) => c.stars === 0) ?? chapters[lastUnlockedIndex];
+  const startChapter =
+    chapters.find((c) => c.stars === 0) ?? chapters[lastUnlockedIndex];
   const initialSampleIndex =
     samples.length > 0 ? findClosestSampleIndex(samples, startChapter) : 0;
 
-  const characterSampleIndexRef = useRef<number>(initialSampleIndex);
-  const [characterSampleIndex, setCharacterSampleIndex] = useState<number>(initialSampleIndex);
-  const [isFacingLeft, setIsFacingLeft] = useState(false);
-  const [isMoving, setIsMoving] = useState(false);
-  const isFacingLeftRef = useRef(false);
+  const { ref: scrollContainerRef, handlers: dragHandlers } = useDragScroll();
+  const {
+    sampleIndex: characterSampleIndex,
+    sampleIndexRef: characterSampleIndexRef,
+    facingLeft: isFacingLeft,
+    isMoving,
+  } = useGameLoop({
+    samples,
+    maxSampleIndex: maxReachableSampleIndex,
+    scrollRef: scrollContainerRef,
+    initialSampleIndex,
+  });
 
   const characterPosition = samples[characterSampleIndex] ?? {
     x: chapters[0]?.x ?? 0,
     y: chapters[0]?.y ?? 0,
   };
 
-  const nearestChapter = chapters.reduce<Level>(
-    (nearest, ch) =>
-      Math.abs(ch.x - characterPosition.x) < Math.abs(nearest.x - characterPosition.x)
-        ? ch
-        : nearest,
-    chapters[0],
-  );
+  const nearestChapter = chapters.length > 0
+    ? findNearestByX(chapters, characterPosition.x)
+    : null;
 
   const isCharacterOnNode =
-    nearestChapter &&
+    nearestChapter !== null &&
     Math.abs(nearestChapter.x - characterPosition.x) < NODE_RADIUS;
 
   const currentProgressChapter = chapters.find((c) => c.stars === 0);
 
-  useEffect(() => {
-    if (samples.length === 0) return;
-
-    function gameLoop() {
-      const { left, right } = pressedKeys.current;
-      let moved = false;
-
-      if (right && !left) {
-        const next = Math.min(
-          characterSampleIndexRef.current + CHARACTER_WALK_SPEED,
-          maxReachableSampleIndex,
-        );
-        if (next !== characterSampleIndexRef.current) {
-          characterSampleIndexRef.current = next;
-          setCharacterSampleIndex(next);
-          if (isFacingLeftRef.current) { isFacingLeftRef.current = false; setIsFacingLeft(false); }
-          moved = true;
-        }
-      } else if (left && !right) {
-        const next = Math.max(characterSampleIndexRef.current - CHARACTER_WALK_SPEED, 0);
-        if (next !== characterSampleIndexRef.current) {
-          characterSampleIndexRef.current = next;
-          setCharacterSampleIndex(next);
-          if (!isFacingLeftRef.current) { isFacingLeftRef.current = true; setIsFacingLeft(true); }
-          moved = true;
-        }
-      }
-
-      setIsMoving(moved);
-
-      if (moved && scrollContainerRef.current && samples[characterSampleIndexRef.current]) {
-        const containerWidth = scrollContainerRef.current.clientWidth;
-        const targetScrollLeft = samples[characterSampleIndexRef.current].x - containerWidth / 2;
-        scrollContainerRef.current.scrollLeft +=
-          (targetScrollLeft - scrollContainerRef.current.scrollLeft) * 0.08;
-      }
-
-      animationFrameRef.current = requestAnimationFrame(gameLoop);
-    }
-
-    animationFrameRef.current = requestAnimationFrame(gameLoop);
-    return () => cancelAnimationFrame(animationFrameRef.current);
-  }, [samples, maxReachableSampleIndex]);
-
+  // Enter key — navigate to the nearest unlocked chapter's level-selection.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "ArrowLeft")  { event.preventDefault(); pressedKeys.current.left = true; }
-      if (event.key === "ArrowRight") { event.preventDefault(); pressedKeys.current.right = true; }
-      if (event.key === "Enter") {
-        const pos = samples[characterSampleIndexRef.current];
-        if (!pos) return;
-        const nearest = chapters.reduce<Level>(
-          (acc, ch) =>
-            Math.abs(ch.x - pos.x) < Math.abs(acc.x - pos.x) ? ch : acc,
-          chapters[0],
-        );
-        if (nearest && nearest.stars !== -1 && Math.abs(nearest.x - pos.x) < NODE_RADIUS) {
-          navigate(`/level-selection?chapter=${nearest.id}`);
-        }
+      if (event.key !== "Enter") return;
+      const pos = samples[characterSampleIndexRef.current];
+      if (!pos || chapters.length === 0) return;
+      const nearest = findNearestByX(chapters, pos.x);
+      if (nearest.stars !== -1 && Math.abs(nearest.x - pos.x) < NODE_RADIUS) {
+        navigate(`/level-selection?chapter=${nearest.id}`);
       }
     }
-    function onKeyUp(event: KeyboardEvent) {
-      if (event.key === "ArrowLeft")  pressedKeys.current.left = false;
-      if (event.key === "ArrowRight") pressedKeys.current.right = false;
-    }
     window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("keyup", onKeyUp);
-    return () => { window.removeEventListener("keydown", onKeyDown); window.removeEventListener("keyup", onKeyUp); };
-  }, [navigate, samples]);
-
-  function onMouseDown(event: React.MouseEvent<HTMLDivElement>) {
-    dragState.current = {
-      active: true,
-      startX: event.pageX - (scrollContainerRef.current?.offsetLeft ?? 0),
-      scrollLeft: scrollContainerRef.current?.scrollLeft ?? 0,
-    };
-    if (scrollContainerRef.current) scrollContainerRef.current.style.cursor = "grabbing";
-  }
-  function onMouseMove(event: React.MouseEvent<HTMLDivElement>) {
-    if (!dragState.current.active || !scrollContainerRef.current) return;
-    event.preventDefault();
-    const currentX = event.pageX - scrollContainerRef.current.offsetLeft;
-    scrollContainerRef.current.scrollLeft =
-      dragState.current.scrollLeft - (currentX - dragState.current.startX) * 1.4;
-  }
-  function onDragEnd() {
-    dragState.current.active = false;
-    if (scrollContainerRef.current) scrollContainerRef.current.style.cursor = "grab";
-  }
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [navigate, samples, chapters, characterSampleIndexRef]);
 
   return (
     <main className="min-h-screen flex flex-col bg-linear-to-b from-sky-300 via-amber-100 to-emerald-200">
@@ -410,10 +352,7 @@ export default function ChapterSelection() {
             ref={scrollContainerRef}
             className="flex-1 overflow-x-scroll overflow-y-hidden select-none rounded-xl border-4 border-stone-800/40"
             style={{ cursor: "grab" }}
-            onMouseDown={onMouseDown}
-            onMouseMove={onMouseMove}
-            onMouseUp={onDragEnd}
-            onMouseLeave={onDragEnd}
+            {...dragHandlers}
           >
             <div className="relative" style={{ width: MAP_WIDTH, height: MAP_HEIGHT }}>
               <svg

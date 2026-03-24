@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import {
-  getAuthFromCookies,
-  isGuestFromCookies,
-  setGuestCookies,
-  clearAuthCookies,
-} from "~/lib/auth-cookies";
+import { useClientAuth } from "~/hooks/useClientAuth";
 
 const SPLASH_TEXTS = [
   "Lernen macht süchtig!",
@@ -42,21 +37,10 @@ export function Welcome() {
   const [splash] = useState(() => randomSplash());
   const navigate = useNavigate();
 
-  const [isAuth, setIsAuth] = useState(() => {
-    // SSR-Schutz: `document` existiert auf dem Server nicht.
-    if (typeof document === "undefined") return false;
-    return getAuthFromCookies() !== null || isGuestFromCookies();
-  });
+  const { isAuth, logout, loginAsGuest } = useClientAuth();
 
   function handleGuestLogin() {
-    setGuestCookies();
-    setIsAuth(true);
-    navigate("/chapter-selection");
-  }
-
-  function handleLogout() {
-    clearAuthCookies();
-    setIsAuth(false);
+    loginAsGuest(() => navigate("/chapter-selection"));
   }
 
   return (
@@ -74,7 +58,7 @@ export function Welcome() {
         {isAuth ? (
           <button
             type="button"
-            onClick={handleLogout}
+            onClick={logout}
             className="font-pixel text-sm md:text-base text-stone-700 dark:text-stone-300 hover:text-amber-600 dark:hover:text-amber-400 py-2 px-3 rounded border-2 border-stone-600 hover:border-amber-500/50 transition-colors cursor-pointer"
           >
             Abmelden

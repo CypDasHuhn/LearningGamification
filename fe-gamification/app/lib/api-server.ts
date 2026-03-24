@@ -1,19 +1,28 @@
-/**
- * Server-seitige API-Aufrufe für Loader (ohne document.cookie).
- * Nutzt den Cookie-Header der Request, um das Auth-Token zu lesen.
- */
-
 import { parseAuthFromCookieHeader } from "./auth-cookies";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
 
 /**
- * GET-Request an die Backend-API mit Auth aus dem Request-Cookie.
- * Gibt null zurück, wenn kein Token vorhanden oder die Anfrage fehlschlägt.
+ * Performs an authenticated GET request from a server-side loader.
+ *
+ * Reads the Bearer token from the incoming HTTP `Cookie` header so the
+ * browser's `document.cookie` API is never touched (SSR-safe).
+ *
+ * @param cookieHeader - The value of the `Cookie` request header
+ *   (typically `request.headers.get("Cookie")`).
+ * @param path - API path relative to `VITE_API_URL` (e.g. `"/themes"`).
+ * @returns Parsed JSON response typed as `T`, or `null` when:
+ *   - no auth token is present in the cookies,
+ *   - the HTTP response status is not OK, or
+ *   - a network/parse error occurs.
+ * @remarks
+ * The caller cannot distinguish between "no auth", "API error", and
+ * "network error" — all three return `null`. Use server-side redirects
+ * or fallback data at the call site accordingly.
  */
 export async function apiGetServer<T>(
   cookieHeader: string | null,
-  path: string
+  path: string,
 ): Promise<T | null> {
   const auth = parseAuthFromCookieHeader(cookieHeader);
   if (!auth?.token) return null;

@@ -9,6 +9,11 @@ const RANK_ICONS: Record<number, string> = {
   3: "🥉",
 };
 
+/**
+ * Leaderboard page — fetches the top-player list client-side via
+ * {@link getLeaderboard} and renders it in a pixel-art ranked table.
+ * The current user's row is highlighted in amber.
+ */
 export default function Rangliste() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);

@@ -1,13 +1,14 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { IngameHeader } from "~/components/ingame-header";
+import { useGameLoop } from "~/hooks/useGameLoop";
+import { useDragScroll } from "~/hooks/useDragScroll";
 
 import type { Level } from "../components/types";
 import {
   MAP_WIDTH,
   MAP_HEIGHT,
   NODE_RADIUS,
-  CHARACTER_WALK_SPEED,
   CHARACTER_VERTICAL_OFFSET,
 } from "../components/mapConstants";
 import { generateDecorationPositions } from "../components/design/positions/mapDecorations";
@@ -15,6 +16,7 @@ import {
   buildPathSamples,
   findClosestSampleIndex,
   buildSvgPathD,
+  findNearestByX,
 } from "../components/design/positions/pathUtils";
 import {
   TreeSVG,
@@ -37,14 +39,20 @@ const CHAPTER_TITLES: Record<string, string> = {
 
 export type { Level };
 
+/**
+ * Level-selection map screen.
+ *
+ * Renders the scrollable adventure map for a single chapter. The user walks
+ * the pixel character to any unlocked level node and presses Enter (or
+ * clicks/taps the node overlay) to start that level.
+ *
+ * @param levels - Ordered array of level positions and completion state for
+ *   the current chapter. Supplied by the route's server loader.
+ */
 export function LevelSelection({ levels }: { levels: Level[] }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const chapterTitle = CHAPTER_TITLES[searchParams.get("chapter") ?? ""] ?? "";
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const dragState = useRef({ active: false, startX: 0, scrollLeft: 0 });
-  const animationFrameRef = useRef<number>(0);
-  const pressedKeys = useRef({ left: false, right: false });
 
   const pathSamples = useRef<{ x: number; y: number }[]>([]);
   if (pathSamples.current.length === 0 && levels.length > 1) {
@@ -71,160 +79,55 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
   const initialSampleIndex =
     samples.length > 0 ? findClosestSampleIndex(samples, startLevel) : 0;
 
-  const characterSampleIndexRef = useRef<number>(initialSampleIndex);
-  const [characterSampleIndex, setCharacterSampleIndex] =
-    useState<number>(initialSampleIndex);
-  const [isFacingLeft, setIsFacingLeft] = useState(false);
-  const [isWalking, setIsWalking] = useState(false);
-  const isFacingLeftRef = useRef(false);
+  const { ref: scrollContainerRef, handlers: dragHandlers } = useDragScroll();
+  const {
+    sampleIndex: characterSampleIndex,
+    sampleIndexRef: characterSampleIndexRef,
+    facingLeft: isFacingLeft,
+    isMoving: isWalking,
+  } = useGameLoop({
+    samples,
+    maxSampleIndex: maxReachableSampleIndex,
+    scrollRef: scrollContainerRef,
+    initialSampleIndex,
+  });
 
   const characterPosition = samples[characterSampleIndex] ?? {
     x: levels[0]?.x ?? 0,
     y: levels[0]?.y ?? 0,
   };
 
-  const nearestLevelToCharacter = levels.reduce<Level>(
-    (nearest, level) =>
-      Math.abs(level.x - characterPosition.x) <
-      Math.abs(nearest.x - characterPosition.x)
-        ? level
-        : nearest,
-    levels[0],
-  );
+  const nearestLevelToCharacter = levels.length > 0
+    ? findNearestByX(levels, characterPosition.x)
+    : null;
 
   const isCharacterOnNode =
-    nearestLevelToCharacter &&
+    nearestLevelToCharacter !== null &&
     Math.abs(nearestLevelToCharacter.x - characterPosition.x) < NODE_RADIUS;
 
   const svgPathD = buildSvgPathD(levels);
   const currentProgressLevel = levels.find((level) => level.stars === 0);
 
-  useEffect(() => {
-    if (samples.length === 0) return;
-
-    function gameLoop() {
-      const { left, right } = pressedKeys.current;
-      let characterMoved = false;
-
-      if (right && !left) {
-        const nextIndex = Math.min(
-          characterSampleIndexRef.current + CHARACTER_WALK_SPEED,
-          maxReachableSampleIndex,
-        );
-        if (nextIndex !== characterSampleIndexRef.current) {
-          characterSampleIndexRef.current = nextIndex;
-          setCharacterSampleIndex(nextIndex);
-          if (isFacingLeftRef.current) {
-            isFacingLeftRef.current = false;
-            setIsFacingLeft(false);
-          }
-          characterMoved = true;
-        }
-      } else if (left && !right) {
-        const nextIndex = Math.max(
-          characterSampleIndexRef.current - CHARACTER_WALK_SPEED,
-          0,
-        );
-        if (nextIndex !== characterSampleIndexRef.current) {
-          characterSampleIndexRef.current = nextIndex;
-          setCharacterSampleIndex(nextIndex);
-          if (!isFacingLeftRef.current) {
-            isFacingLeftRef.current = true;
-            setIsFacingLeft(true);
-          }
-          characterMoved = true;
-        }
-      }
-
-      setIsWalking(characterMoved);
-
-      if (
-        characterMoved &&
-        scrollContainerRef.current &&
-        samples[characterSampleIndexRef.current]
-      ) {
-        const containerWidth = scrollContainerRef.current.clientWidth;
-        const targetScrollLeft =
-          samples[characterSampleIndexRef.current].x - containerWidth / 2;
-        scrollContainerRef.current.scrollLeft +=
-          (targetScrollLeft - scrollContainerRef.current.scrollLeft) * 0.08;
-      }
-
-      animationFrameRef.current = requestAnimationFrame(gameLoop);
-    }
-
-    animationFrameRef.current = requestAnimationFrame(gameLoop);
-    return () => cancelAnimationFrame(animationFrameRef.current);
-  }, [samples, maxReachableSampleIndex]);
-
+  // Enter key — navigate to the nearest unlocked level node.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        pressedKeys.current.left = true;
-      }
-      if (event.key === "ArrowRight") {
-        event.preventDefault();
-        pressedKeys.current.right = true;
-      }
-      if (event.key === "Enter") {
-        const currentPosition = samples[characterSampleIndexRef.current];
-        if (!currentPosition) return;
-        const nearestLevel = levels.reduce<Level>(
-          (nearest, level) =>
-            Math.abs(level.x - currentPosition.x) <
-            Math.abs(nearest.x - currentPosition.x)
-              ? level
-              : nearest,
-          levels[0],
+      if (event.key !== "Enter") return;
+      const currentPosition = samples[characterSampleIndexRef.current];
+      if (!currentPosition || levels.length === 0) return;
+      const nearestLevel = findNearestByX(levels, currentPosition.x);
+      const isOnUnlockedNode =
+        nearestLevel.stars !== -1 &&
+        Math.abs(nearestLevel.x - currentPosition.x) < NODE_RADIUS;
+      if (isOnUnlockedNode) {
+        navigate(
+          `/level/${nearestLevel.id}?chapterTitle=${encodeURIComponent(chapterTitle)}&chapter=${searchParams.get("chapter") ?? ""}`,
         );
-        const isOnUnlockedNode =
-          nearestLevel &&
-          nearestLevel.stars !== -1 &&
-          Math.abs(nearestLevel.x - currentPosition.x) < NODE_RADIUS;
-        if (isOnUnlockedNode) {
-          navigate(`/level/${nearestLevel.id}?chapterTitle=${encodeURIComponent(chapterTitle)}&chapter=${searchParams.get("chapter") ?? ""}`);
-        }
       }
-    }
-
-    function onKeyUp(event: KeyboardEvent) {
-      if (event.key === "ArrowLeft") pressedKeys.current.left = false;
-      if (event.key === "ArrowRight") pressedKeys.current.right = false;
     }
 
     window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("keyup", onKeyUp);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("keyup", onKeyUp);
-    };
-  }, [levels, navigate, samples]);
-
-  function onMouseDown(event: React.MouseEvent<HTMLDivElement>) {
-    dragState.current = {
-      active: true,
-      startX: event.pageX - (scrollContainerRef.current?.offsetLeft ?? 0),
-      scrollLeft: scrollContainerRef.current?.scrollLeft ?? 0,
-    };
-    if (scrollContainerRef.current)
-      scrollContainerRef.current.style.cursor = "grabbing";
-  }
-
-  function onMouseMove(event: React.MouseEvent<HTMLDivElement>) {
-    if (!dragState.current.active || !scrollContainerRef.current) return;
-    event.preventDefault();
-    const currentX = event.pageX - scrollContainerRef.current.offsetLeft;
-    scrollContainerRef.current.scrollLeft =
-      dragState.current.scrollLeft -
-      (currentX - dragState.current.startX) * 1.4;
-  }
-
-  function onDragEnd() {
-    dragState.current.active = false;
-    if (scrollContainerRef.current)
-      scrollContainerRef.current.style.cursor = "grab";
-  }
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [levels, navigate, samples, chapterTitle, searchParams, characterSampleIndexRef]);
 
   return (
     <main className="min-h-screen flex flex-col bg-linear-to-b from-sky-300 via-amber-100 to-emerald-200">
@@ -252,10 +155,7 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
             ref={scrollContainerRef}
             className="flex-1 overflow-x-scroll overflow-y-hidden select-none rounded-xl border-4 border-stone-800/40"
             style={{ cursor: "grab" }}
-            onMouseDown={onMouseDown}
-            onMouseMove={onMouseMove}
-            onMouseUp={onDragEnd}
-            onMouseLeave={onDragEnd}
+            {...dragHandlers}
           >
             <div
               className="relative"
@@ -365,11 +265,6 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
                 <LevelNode
                   key={level.id}
                   level={level}
-                  isCurrent={currentProgressLevel?.id === level.id}
-                  isCharacterHere={
-                    isCharacterOnNode &&
-                    nearestLevelToCharacter?.id === level.id
-                  }
                   chapterTitle={chapterTitle}
                   chapterId={searchParams.get("chapter") ?? ""}
                 />

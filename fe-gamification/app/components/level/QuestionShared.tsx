@@ -1,3 +1,59 @@
+/**
+ * Visual state for an answer option button.
+ * Used by both {@link MultipleChoiceQuestion} and {@link GapFillQuestion}.
+ */
+export type ButtonState = "idle" | "selected" | "correct" | "wrong" | "missed";
+
+/** Resolved colour tokens for a button in a given {@link ButtonState}. */
+export interface ButtonVisualState {
+  bg: string;
+  borderColor: string;
+  textColor: string;
+  /** Non-empty only for "correct" and "wrong" states. */
+  animStyle: React.CSSProperties;
+}
+
+/**
+ * Returns the colour tokens and animation style for an option button based on
+ * its current {@link ButtonState}.
+ *
+ * Centralises the colour logic that was previously duplicated across
+ * `MultipleChoiceQuestion` and `GapFillQuestion`.
+ *
+ * @param state - The button's current visual state.
+ * @returns Resolved CSS values ready to spread onto the button's `style` prop.
+ */
+export function getButtonColors(state: ButtonState): ButtonVisualState {
+  const bg =
+    state === "correct"  ? COLORS.correctBg  :
+    state === "wrong"    ? COLORS.wrongBg     :
+    state === "missed"   ? "#1a1000"          :
+    state === "selected" ? COLORS.selectedBg  :
+    COLORS.bgMid;
+
+  const borderColor =
+    state === "correct"  ? COLORS.correctBorder  :
+    state === "wrong"    ? COLORS.wrongBorder     :
+    state === "missed"   ? COLORS.amberDark       :
+    state === "selected" ? COLORS.selectedBorder  :
+    COLORS.rim2;
+
+  const textColor =
+    state === "correct"  ? COLORS.correctText  :
+    state === "wrong"    ? COLORS.wrongText     :
+    state === "missed"   ? COLORS.amber         :
+    state === "selected" ? COLORS.selectedText  :
+    COLORS.textMid;
+
+  const animStyle: React.CSSProperties =
+    state === "correct" ? { animation: "answerCorrect 0.4s ease" } :
+    state === "wrong"   ? { animation: "answerWrong 0.4s ease" }   :
+    {};
+
+  return { bg, borderColor, textColor, animStyle };
+}
+
+/** CSS keyframe animations and utility classes used by all question components. */
 export const QUESTION_KEYFRAMES = `
   @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
@@ -38,6 +94,7 @@ export const QUESTION_KEYFRAMES = `
   .q-anim-wrong   { animation: answerWrong 0.4s ease; }
 `;
 
+/** Design-token palette shared by all question components. */
 export const COLORS = {
   bgDeep: "#1c1917",
   bgMid: "#292524",
@@ -70,14 +127,21 @@ export const COLORS = {
   textFaint: "#57534e",
 } as const;
 
+/** Pixel-art drop shadow for raised buttons and cards. */
 export const PIXEL_SHADOW = "4px 4px 0 rgba(0,0,0,0.5)";
+/** Inset highlight + shadow used on sunken surfaces. */
 export const INSET_SHADOW =
   "inset 2px 2px 0 rgba(255,255,255,0.12), inset -2px -2px 0 rgba(0,0,0,0.35)";
 
+/** State passed to {@link FeedbackBar} after the user has answered. */
 export type AnswerState = "correct" | "wrong" | "selected" | null;
 
 type ProgressBarProps = { current: number; total: number };
 
+/**
+ * Amber XP-style progress bar showing question progress within a level.
+ * Fills proportionally to `(current - 1) / total`.
+ */
 export function ProgressBar({ current, total }: ProgressBarProps) {
   const pct = ((current - 1) / total) * 100;
   return (
@@ -119,6 +183,10 @@ type QuestionHeaderProps = {
   totalQuestions: number;
 };
 
+/**
+ * Top strip of every question card.
+ * Displays the level number and an animated progress bar.
+ */
 export function QuestionHeader({
   levelNum,
   questionNum,
@@ -155,6 +223,10 @@ type FeedbackBarProps = {
   wrongText: string;
 };
 
+/**
+ * Coloured banner shown after the user answers.
+ * Green with `correctText` for a correct answer; red with `wrongText` otherwise.
+ */
 export function FeedbackBar({
   isCorrect,
   correctText,

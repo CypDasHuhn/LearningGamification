@@ -1,5 +1,6 @@
 import { NODE_RADIUS } from "../../mapConstants";
 
+/** Props for {@link PlatformSVG}. */
 type PlatformSVGProps = {
   x: number;
   y: number;
@@ -9,6 +10,18 @@ type PlatformSVGProps = {
   isCharacterNearby: boolean;
 };
 
+/**
+ * SVG circle platform drawn at a level/chapter node position.
+ *
+ * Four visual states:
+ * - **locked** — grey rim and surface; no interactive rings.
+ * - **completed** — gold rim and surface.
+ * - **current** — sky-blue surface + solid outer ring.
+ * - **default** — tan surface; no extra rings.
+ *
+ * When the character is nearby and the node is unlocked, a dashed amber ring
+ * pulses around the node to signal that Enter will activate it.
+ */
 export function PlatformSVG({
   x,
   y,

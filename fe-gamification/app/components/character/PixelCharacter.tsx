@@ -1,5 +1,6 @@
 const PIXEL_SIZE = 3;
 
+/** Colour palette for the pixel-art character sprite. */
 const SPRITE_COLORS = {
   skin: "#f5c89a",
   hair: "#3d2b1f",
@@ -44,6 +45,13 @@ type PixelCharacterProps = {
   isWalking: boolean;
 };
 
+/**
+ * 8×18 pixel-art character sprite built from CSS `div` blocks.
+ *
+ * Renders a walking pose (legs split) when `isWalking` is true, and a
+ * standing pose otherwise. Mirrored horizontally via `scaleX(-1)` when
+ * `facingLeft` is true.
+ */
 export function PixelCharacter({ facingLeft, isWalking }: PixelCharacterProps) {
   const { skin, hair, shirt, pants, boot, eye, belt } = SPRITE_COLORS;
 
@@ -91,6 +99,7 @@ export function PixelCharacter({ facingLeft, isWalking }: PixelCharacterProps) {
   );
 }
 
+/** CSS keyframe animations for the character: `charBob` (walking) and `charIdle` (standing). */
 export const CHARACTER_KEYFRAMES = `
 @keyframes charBob {
   0%,100% { transform: translateY(0px) translateX(-50%); }

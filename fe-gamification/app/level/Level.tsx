@@ -8,6 +8,7 @@ import { TrueFalseQuestion } from "~/components/level/TrueFalseQuestion";
 import { GapFillQuestion } from "~/components/level/GapQuestion";
 import type { CodeToken, GapAnswer } from "~/components/level/GapQuestion";
 
+/** Props for {@link Level}. */
 type LevelProps = {
   questionSetId: number;
   title: string;
@@ -16,6 +17,7 @@ type LevelProps = {
   questionList: QuestionResponse[];
 };
 
+/** Discriminated-union state machine for the level flow. */
 type LevelPhase =
   | { phase: "question"; currentIndex: number; correctCount: number }
   | { phase: "result"; correctCount: number; total: number };
@@ -94,6 +96,15 @@ function ResultScreen({
   );
 }
 
+/**
+ * Full level experience: cycles through all questions then shows a result screen.
+ *
+ * @param questionSetId - The numeric level/question-set ID shown in the header.
+ * @param title - Fallback title when `chapterTitle` is empty.
+ * @param chapterTitle - Chapter name displayed in the ingame header banner.
+ * @param chapterId - Used to build back/next links to the correct chapter's level-selection.
+ * @param questionList - Ordered questions fetched by the server loader.
+ */
 export function Level({ questionSetId, title, chapterTitle, chapterId = "", questionList }: LevelProps) {
   const total = questionList.length;
 
@@ -190,6 +201,14 @@ export function Level({ questionSetId, title, chapterTitle, chapterId = "", ques
             }}
           />
         );
+      }
+
+      default: {
+        // Exhaustiveness guard — TypeScript will error here if a new
+        // QuestionType variant is added without a matching case above.
+        const _exhaustive: never = q.questionType;
+        console.warn("Unbekannter questionType:", _exhaustive);
+        return null;
       }
     }
   }

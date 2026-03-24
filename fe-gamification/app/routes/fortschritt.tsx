@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { IngameHeader } from "~/components/ingame-header";
-import { getAuthFromCookies } from "~/lib/auth-cookies";
+import { useClientAuth } from "~/hooks/useClientAuth";
 
 const MOCK_PROGRESS = [
   { chapter: "Kapitel 1", title: "Grundlagen", levels: 8, completed: 8, xp: 320 },
@@ -83,15 +82,12 @@ function NotLoggedIn() {
   );
 }
 
+/** Progress page — requires an active session (real user or guest). */
 export default function Fortschritt() {
-  const [isAuth, setIsAuth] = useState<boolean | null>(null);
+  const { loading, isAuth } = useClientAuth();
 
-  useEffect(() => {
-    setIsAuth(getAuthFromCookies() !== null);
-  }, []);
-
-  // Avoid flash before cookie check resolves
-  if (isAuth === null) {
+  // Avoid layout shift before cookie check resolves
+  if (loading) {
     return (
       <div className="min-h-screen flex flex-col bg-linear-to-b from-sky-300 via-emerald-200 to-emerald-500">
         <IngameHeader siteName="Fortschritt" />

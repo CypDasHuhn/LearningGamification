@@ -1,30 +1,38 @@
 import { ArrowLeft, User2 } from "lucide-react";
 import { Link } from "react-router";
-import { useState, useEffect } from "react";
-import { getAuthFromCookies, isGuestFromCookies } from "~/lib/auth-cookies";
+import { useClientAuth } from "~/hooks/useClientAuth";
 
+/** Props for {@link IngameHeader}. */
 type IngameHeaderProps = {
+  /** Page title displayed in the centre of the header bar. */
   siteName: string;
+  /**
+   * Optional username override. When provided, it is shown instead of the
+   * value read from the auth cookie. Useful when the parent already has the
+   * username from a loader.
+   */
   username?: string;
+  /** Link target for the back button. Defaults to `"/"`. */
   backTo?: string;
+  /** Label for the back button. Defaults to `"MENÜ"`. */
   backLabel?: string;
 };
 
-function getDisplayName(override?: string): string {
-  if (override) return override;
-  if (typeof document === "undefined") return "Gast";
-  const auth = getAuthFromCookies();
-  if (auth) return auth.userName;
-  if (isGuestFromCookies()) return "Gast";
-  return "Gast";
-}
-
-export function IngameHeader({ siteName, username, backTo = "/", backLabel = "MENÜ" }: IngameHeaderProps) {
-  const [displayName, setDisplayName] = useState("Gast");
-
-  useEffect(() => {
-    setDisplayName(getDisplayName(username));
-  }, [username]);
+/**
+ * Sticky top header used on all in-game pages.
+ *
+ * Shows a back-navigation button on the left, the page title in the centre,
+ * and the current user's display name with an avatar icon on the right.
+ * The display name falls back through: `username` prop → cookie auth name → `"Gast"`.
+ */
+export function IngameHeader({
+  siteName,
+  username,
+  backTo = "/",
+  backLabel = "MENÜ",
+}: IngameHeaderProps) {
+  const { auth, loading } = useClientAuth();
+  const displayName = loading ? "Gast" : (username ?? auth?.userName ?? "Gast");
 
   return (
     <header className="shrink-0 bg-linear-to-b from-sky-500 via-sky-600 to-sky-700 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 border-b-4 border-b-slate-900 shadow-[0_8px_0_rgba(15,23,42,0.9)]">
