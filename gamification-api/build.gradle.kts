@@ -8,6 +8,7 @@ plugins {
     kotlin("jvm") version "2.1.0"
     id("io.ktor.plugin") version "3.1.3"
     id("org.jetbrains.kotlin.plugin.serialization") version "2.1.0"
+    id("com.gradleup.shadow") version "8.3.6"
 }
 
 group = "dev.gamification.backend"
@@ -17,6 +18,10 @@ version = "0.0.1"
 application { mainClass = "io.ktor.server.netty.EngineMain" }
 
 kotlin { jvmToolchain(21) }
+
+application {
+    mainClass.set("dev.gamification.backend.Application")
+}
 
 dependencies {
     implementation("io.ktor:ktor-server-auth")
