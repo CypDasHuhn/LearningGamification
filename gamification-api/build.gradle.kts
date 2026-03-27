@@ -20,7 +20,7 @@ application { mainClass = "io.ktor.server.netty.EngineMain" }
 kotlin { jvmToolchain(21) }
 
 application {
-    mainClass.set("dev.gamification.backend.Application")
+    mainClass.set("dev.gamification.backend.ApplicationKt")
 }
 
 dependencies {
