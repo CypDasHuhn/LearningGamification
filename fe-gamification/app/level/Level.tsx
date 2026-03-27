@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { IngameHeader } from "~/components/ingame-header";
+import { submitQuestionAnswer } from "~/lib/api";
 
 import type { QuestionResponse } from "~/components/types";
 import { MultipleChoiceQuestion } from "~/components/level/MultipleChoiceQuestion";
@@ -96,6 +97,32 @@ function ResultScreen({
   );
 }
 
+function resolveTrueFalseAnswerId(
+  question: QuestionResponse,
+  selectedIsTrue: boolean,
+): number | null {
+  const sorted = [...question.mcAnswers].sort((a, b) => a.optionOrder - b.optionOrder);
+  const normalize = (value: string) => value.trim().toLowerCase();
+
+  const trueCandidate = sorted.find((answer) => {
+    const text = normalize(answer.optionText);
+    return text === "true" || text === "wahr";
+  });
+  const falseCandidate = sorted.find((answer) => {
+    const text = normalize(answer.optionText);
+    return text === "false" || text === "falsch";
+  });
+
+  const fallbackTrue = sorted[0];
+  const fallbackFalse = sorted.find((answer) => answer.answerId !== fallbackTrue?.answerId);
+
+  const selectedAnswer = selectedIsTrue
+    ? (trueCandidate ?? fallbackTrue)
+    : (falseCandidate ?? fallbackFalse);
+
+  return selectedAnswer?.answerId ?? null;
+}
+
 /**
  * Full level experience: cycles through all questions then shows a result screen.
  *
@@ -146,13 +173,24 @@ export function Level({ questionSetId, title, chapterTitle, chapterId = "", ques
         );
         return (
           <MultipleChoiceQuestion
+            key={q.questionId}
             {...shared}
             data={{
               question: q.startText ?? "",
               options: sorted.map((a) => a.optionText),
+              allowsMultiple: q.allowsMultiple,
               correctIndices: [],
               feedbackCorrect: "✓ RICHTIG!",
               feedbackWrong: "✗ FALSCH!",
+            }}
+            onSubmit={async (selectedIndices) => {
+              const selectedAnswerIds = selectedIndices
+                .map((index) => sorted[index]?.answerId)
+                .filter((answerId): answerId is number => typeof answerId === "number");
+              const result = await submitQuestionAnswer(q.questionId, {
+                selectedAnswerIds,
+              });
+              return result.isCorrect;
             }}
           />
         );
@@ -161,12 +199,22 @@ export function Level({ questionSetId, title, chapterTitle, chapterId = "", ques
       case "TF": {
         return (
           <TrueFalseQuestion
+            key={q.questionId}
             {...shared}
             data={{
               statement: q.startText ?? "",
-              correctAnswer: true,
               feedbackCorrect: "✓ RICHTIG!",
               feedbackWrong: "✗ FALSCH!",
+            }}
+            onSubmit={async (selectedIsTrue) => {
+              const selectedAnswerId = resolveTrueFalseAnswerId(q, selectedIsTrue);
+              if (selectedAnswerId === null) {
+                throw new Error("Die Wahr/Falsch-Antworten sind nicht korrekt konfiguriert.");
+              }
+              const result = await submitQuestionAnswer(q.questionId, {
+                selectedAnswerIds: [selectedAnswerId],
+              });
+              return result.isCorrect;
             }}
           />
         );
@@ -186,11 +234,11 @@ export function Level({ questionSetId, title, chapterTitle, chapterId = "", ques
           return {
             gapId: gf.gapId,
             options: opts.map((o) => o.optionText),
-            correctIndex: 0,
           };
         });
         return (
           <GapFillQuestion
+            key={q.questionId}
             {...shared}
             data={{
               instruction: q.startText ?? "",
@@ -198,6 +246,27 @@ export function Level({ questionSetId, title, chapterTitle, chapterId = "", ques
               gaps,
               feedbackCorrect: "✓ RICHTIG!",
               feedbackWrong: "✗ FALSCH!",
+            }}
+            onSubmit={async (gapSelections) => {
+              const gapAnswers = sortedGaps.map((gapField) => {
+                const sortedOptions = [...gapField.options].sort(
+                  (a, b) => a.optionOrder - b.optionOrder,
+                );
+                const selectedIndex = gapSelections[gapField.gapId];
+                const selectedOption = sortedOptions[selectedIndex];
+                if (!selectedOption) {
+                  throw new Error("Bitte alle Lücken auswählen.");
+                }
+                return {
+                  gapId: gapField.gapId,
+                  selectedOptionId: selectedOption.gapOptionId,
+                };
+              });
+
+              const result = await submitQuestionAnswer(q.questionId, {
+                gapAnswers,
+              });
+              return result.isCorrect;
             }}
           />
         );

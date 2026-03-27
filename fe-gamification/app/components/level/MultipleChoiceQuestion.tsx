@@ -14,10 +14,13 @@ import {
 export type MultipleChoiceQuestion = {
   question: string;
   options: string[];
-  correctIndices: number[];
+  correctIndices?: number[];
+  allowsMultiple?: boolean;
   feedbackCorrect: string;
   feedbackWrong: string;
 };
+
+type SubmitResult = boolean | void | Promise<boolean | void>;
 
 type MultipleChoiceQuestionProps = {
   levelNum: number;
@@ -25,7 +28,7 @@ type MultipleChoiceQuestionProps = {
   totalQuestions: number;
   data: MultipleChoiceQuestion;
   onAnswer: (isCorrect: boolean) => void;
-  onSubmit?: (selectedIndices: number[]) => void;
+  onSubmit?: (selectedIndices: number[]) => SubmitResult;
 };
 
 /** Returns "A", "B", … "Z" for indices 0-25, then "27", "28", … thereafter. */
@@ -130,46 +133,75 @@ export function MultipleChoiceQuestion({
 }: MultipleChoiceQuestionProps) {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [revealed, setRevealed] = useState(false);
+  const [evaluatedCorrect, setEvaluatedCorrect] = useState<boolean | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const correctIndices: number[] = Array.isArray(data.correctIndices)
     ? data.correctIndices
-    : [(data as unknown as { correctIndex: number }).correctIndex ?? 0];
+    : [];
 
-  const isMulti = correctIndices.length > 1;
+  const hasLocalCorrectness = correctIndices.length > 0;
+  const isMulti = data.allowsMultiple ?? correctIndices.length > 1;
   const isCorrect =
-    revealed &&
-    selected.size === correctIndices.length &&
-    correctIndices.every((i) => selected.has(i));
+    evaluatedCorrect ??
+    (revealed &&
+      hasLocalCorrectness &&
+      selected.size === correctIndices.length &&
+      correctIndices.every((i) => selected.has(i)));
 
   function toggleOption(index: number) {
-    if (revealed) return;
+    if (revealed || isSubmitting) return;
     setSelected((prev) => {
       const next = new Set(prev);
       if (isMulti) {
         next.has(index) ? next.delete(index) : next.add(index);
       } else {
-        next.clear();
-        next.add(index);
+        if (next.has(index)) {
+          next.delete(index);
+        } else {
+          next.clear();
+          next.add(index);
+        }
       }
       return next;
     });
   }
 
-  function handleConfirm() {
-    if (revealed || selected.size === 0) return;
-    setRevealed(true);
+  async function handleConfirm() {
+    if (revealed || selected.size === 0 || isSubmitting) return;
+    setSubmitError(null);
     const selectedIndices = [...selected];
-    onSubmit?.(selectedIndices);
-    const correct =
+    let correct =
       selected.size === correctIndices.length &&
       correctIndices.every((i) => selected.has(i));
-    onAnswer(correct);
+
+    try {
+      if (onSubmit) {
+        setIsSubmitting(true);
+        const submitResult = await onSubmit(selectedIndices);
+        if (typeof submitResult === "boolean") {
+          correct = submitResult;
+        }
+      }
+      setEvaluatedCorrect(correct);
+      setRevealed(true);
+      onAnswer(correct);
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : "Antwort konnte nicht gesendet werden.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   function getState(index: number): ButtonState {
     const isCorrectOption = correctIndices.includes(index);
     const wasSelected = selected.has(index);
     if (!revealed) return wasSelected ? "selected" : "idle";
+    if (evaluatedCorrect === true) return wasSelected ? "correct" : "idle";
+    if (evaluatedCorrect === false) return wasSelected ? "wrong" : "idle";
     if (isCorrectOption && wasSelected) return "correct";
     if (!isCorrectOption && wasSelected) return "wrong";
     if (isCorrectOption && !wasSelected) return "missed";
@@ -242,23 +274,37 @@ export function MultipleChoiceQuestion({
 
         {!revealed && (
           <div style={{ padding: "0 20px 16px" }}>
+            {submitError && (
+              <p
+                style={{
+                  marginBottom: 10,
+                  fontFamily: "'Press Start 2P', monospace",
+                  fontSize: 8,
+                  color: COLORS.wrongText,
+                  lineHeight: 1.8,
+                }}
+              >
+                {submitError}
+              </p>
+            )}
             <button
               onClick={handleConfirm}
-              disabled={selected.size === 0}
+              disabled={selected.size === 0 || isSubmitting}
               style={{
                 width: "100%",
                 padding: "16px",
                 fontFamily: "'Press Start 2P', monospace",
                 fontSize: 11,
-                background: selected.size > 0 ? COLORS.amberDark : COLORS.bgMid,
-                border: `3px solid ${selected.size > 0 ? COLORS.amber : COLORS.rim1}`,
-                boxShadow: selected.size > 0 ? PIXEL_SHADOW : "none",
-                color: selected.size > 0 ? COLORS.amberLight : COLORS.textFaint,
-                cursor: selected.size > 0 ? "pointer" : "default",
+                background:
+                  selected.size > 0 && !isSubmitting ? COLORS.amberDark : COLORS.bgMid,
+                border: `3px solid ${selected.size > 0 && !isSubmitting ? COLORS.amber : COLORS.rim1}`,
+                boxShadow: selected.size > 0 && !isSubmitting ? PIXEL_SHADOW : "none",
+                color: selected.size > 0 && !isSubmitting ? COLORS.amberLight : COLORS.textFaint,
+                cursor: selected.size > 0 && !isSubmitting ? "pointer" : "default",
                 transition: "all 0.15s",
               }}
             >
-              BESTÄTIGEN ↵
+              {isSubmitting ? "PRÜFE..." : "BESTÄTIGEN ↵"}
             </button>
           </div>
         )}

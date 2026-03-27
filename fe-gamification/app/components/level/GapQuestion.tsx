@@ -19,7 +19,7 @@ export type CodeToken =
 export type GapAnswer = {
   gapId: number;
   options: string[];
-  correctIndex: number;
+  correctIndex?: number;
 };
 
 /** Data model for a gap-fill (cloze) question. */
@@ -37,7 +37,9 @@ type GapFillQuestionProps = {
   totalQuestions: number;
   data: GapFillQuestion;
   onAnswer: (isCorrect: boolean) => void;
-  onSubmit?: (gapSelections: Record<number, number>) => void;
+  onSubmit?: (
+    gapSelections: Record<number, number>,
+  ) => boolean | void | Promise<boolean | void>;
 };
 
 function optionLabel(index: number): string {
@@ -187,42 +189,82 @@ export function GapFillQuestion({
     Record<number, number | null>
   >(Object.fromEntries(data.gaps.map((g) => [g.gapId, null])));
   const [revealed, setRevealed] = useState(false);
+  const [evaluatedCorrect, setEvaluatedCorrect] = useState<boolean | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const activeGap =
     data.gaps.find((g) => g.gapId === activeGapId) ?? data.gaps[0];
   const allFilled = data.gaps.every((g) => gapSelections[g.gapId] !== null);
+  const hasLocalCorrectness = data.gaps.every((g) => typeof g.correctIndex === "number");
 
   const isCorrect =
-    revealed &&
-    data.gaps.every((g) => gapSelections[g.gapId] === g.correctIndex);
+    evaluatedCorrect ??
+    (revealed &&
+      hasLocalCorrectness &&
+      data.gaps.every((g) => gapSelections[g.gapId] === g.correctIndex));
 
   function getGapState(gapId: number): GapState {
     const gap = data.gaps.find((g) => g.gapId === gapId)!;
     const selection = gapSelections[gapId];
     if (!revealed) return selection !== null ? "selected" : "idle";
+    if (evaluatedCorrect === true) return selection !== null ? "correct" : "idle";
+    if (evaluatedCorrect === false) return selection !== null ? "wrong" : "idle";
     if (selection === gap.correctIndex) return "correct";
     return "wrong";
   }
 
   function handleOptionSelect(optionIndex: number) {
-    if (revealed) return;
-    setGapSelections((prev) => ({ ...prev, [activeGapId]: optionIndex }));
+    if (revealed || isSubmitting) return;
+    let nextGapId: number | null = null;
 
-    const nextEmpty = data.gaps.find(
-      (g) => g.gapId !== activeGapId && gapSelections[g.gapId] === null,
-    );
-    if (nextEmpty) setActiveGapId(nextEmpty.gapId);
+    setGapSelections((prev) => {
+      const currentSelection = prev[activeGapId];
+      const nextSelection = currentSelection === optionIndex ? null : optionIndex;
+      const next = { ...prev, [activeGapId]: nextSelection };
+
+      if (nextSelection !== null) {
+        const nextEmpty = data.gaps.find(
+          (g) => g.gapId !== activeGapId && next[g.gapId] === null,
+        );
+        if (nextEmpty) nextGapId = nextEmpty.gapId;
+      }
+
+      return next;
+    });
+
+    if (nextGapId !== null) {
+      setActiveGapId(nextGapId);
+    }
   }
 
-  function handleConfirm() {
-    if (revealed || !allFilled) return;
-    setRevealed(true);
+  async function handleConfirm() {
+    if (revealed || !allFilled || isSubmitting) return;
     const filledSelections = gapSelections as Record<number, number>;
-    onSubmit?.(filledSelections);
-    const correct = data.gaps.every(
+    setSubmitError(null);
+    let correct = data.gaps.every(
       (g) => gapSelections[g.gapId] === g.correctIndex,
     );
-    onAnswer(correct);
+
+    try {
+      if (onSubmit) {
+        setIsSubmitting(true);
+        const submitResult = await onSubmit(filledSelections);
+        if (typeof submitResult === "boolean") {
+          correct = submitResult;
+        }
+      }
+
+      setEvaluatedCorrect(correct);
+      setRevealed(true);
+      onAnswer(correct);
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : "Antwort konnte nicht gesendet werden.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   function getOptionState(optionIndex: number): {
@@ -237,6 +279,20 @@ export function GapFillQuestion({
         isLocked: false,
         isCorrect: null,
       };
+    if (evaluatedCorrect === true) {
+      return {
+        isActive: false,
+        isLocked: true,
+        isCorrect: selection === optionIndex ? true : null,
+      };
+    }
+    if (evaluatedCorrect === false) {
+      return {
+        isActive: false,
+        isLocked: true,
+        isCorrect: selection === optionIndex ? false : null,
+      };
+    }
     return {
       isActive: false,
       isLocked: true,
@@ -386,23 +442,38 @@ export function GapFillQuestion({
 
         {!revealed && (
           <div style={{ padding: "0 20px 16px" }}>
+            {submitError && (
+              <p
+                style={{
+                  marginBottom: 10,
+                  fontFamily: "'Press Start 2P', monospace",
+                  fontSize: 8,
+                  color: COLORS.wrongText,
+                  lineHeight: 1.8,
+                }}
+              >
+                {submitError}
+              </p>
+            )}
             <button
               onClick={handleConfirm}
-              disabled={!allFilled}
+              disabled={!allFilled || isSubmitting}
               style={{
                 width: "100%",
                 padding: "16px",
                 fontFamily: "'Press Start 2P', monospace",
                 fontSize: 11,
-                background: allFilled ? COLORS.amberDark : COLORS.bgMid,
-                border: `3px solid ${allFilled ? COLORS.amber : COLORS.rim1}`,
-                boxShadow: allFilled ? PIXEL_SHADOW : "none",
-                color: allFilled ? COLORS.amberLight : COLORS.textFaint,
-                cursor: allFilled ? "pointer" : "default",
+                background: allFilled && !isSubmitting ? COLORS.amberDark : COLORS.bgMid,
+                border: `3px solid ${allFilled && !isSubmitting ? COLORS.amber : COLORS.rim1}`,
+                boxShadow: allFilled && !isSubmitting ? PIXEL_SHADOW : "none",
+                color: allFilled && !isSubmitting ? COLORS.amberLight : COLORS.textFaint,
+                cursor: allFilled && !isSubmitting ? "pointer" : "default",
                 transition: "all 0.15s",
               }}
             >
-              {allFilled
+              {isSubmitting
+                ? "PRÜFE..."
+                : allFilled
                 ? "BESTÄTIGEN ↵"
                 : `NOCH ${data.gaps.filter((g) => gapSelections[g.gapId] === null).length} LÜCKE(N) OFFEN`}
             </button>

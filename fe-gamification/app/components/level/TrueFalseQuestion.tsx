@@ -11,10 +11,12 @@ import {
 /** Data model for a true/false question. */
 export type TrueFalseQuestion = {
   statement: string;
-  correctAnswer: boolean;
+  correctAnswer?: boolean;
   feedbackCorrect: string;
   feedbackWrong: string;
 };
+
+type SubmitResult = boolean | void | Promise<boolean | void>;
 
 type TrueFalseQuestionProps = {
   levelNum: number;
@@ -22,7 +24,7 @@ type TrueFalseQuestionProps = {
   totalQuestions: number;
   data: TrueFalseQuestion;
   onAnswer: (isCorrect: boolean) => void;
-  onSubmit?: (selectedIsTrue: boolean) => void;
+  onSubmit?: (selectedIsTrue: boolean) => SubmitResult;
 };
 
 /** Renders a true/false question card with WAHR / FALSCH buttons. */
@@ -35,15 +37,46 @@ export function TrueFalseQuestion({
   onSubmit,
 }: TrueFalseQuestionProps) {
   const [answer, setAnswer] = useState<boolean | null>(null);
+  const [revealed, setRevealed] = useState(false);
+  const [evaluatedCorrect, setEvaluatedCorrect] = useState<boolean | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const revealed = answer !== null;
-  const isCorrect = answer === data.correctAnswer;
+  const isCorrect =
+    evaluatedCorrect ??
+    (answer !== null &&
+      typeof data.correctAnswer === "boolean" &&
+      answer === data.correctAnswer);
 
-  function handleAnswer(value: boolean) {
-    if (revealed) return;
+  async function handleAnswer(value: boolean) {
+    if (revealed || isSubmitting) return;
     setAnswer(value);
-    onSubmit?.(value);
-    onAnswer(value === data.correctAnswer);
+    setSubmitError(null);
+
+    const localCorrect =
+      typeof data.correctAnswer === "boolean" ? value === data.correctAnswer : false;
+    let correct = localCorrect;
+
+    try {
+      if (onSubmit) {
+        setIsSubmitting(true);
+        const submitResult = await onSubmit(value);
+        if (typeof submitResult === "boolean") {
+          correct = submitResult;
+        }
+      }
+
+      setEvaluatedCorrect(correct);
+      setRevealed(true);
+      onAnswer(correct);
+    } catch (error) {
+      setAnswer(null);
+      setSubmitError(
+        error instanceof Error ? error.message : "Antwort konnte nicht gesendet werden.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -103,27 +136,24 @@ export function TrueFalseQuestion({
             {([true, false] as const).map((value) => {
               const isWahrButton = value === true;
               const wasChosen = answer === value;
-              const isThisCorrect = value === data.correctAnswer;
 
               const bg = !revealed
                 ? isWahrButton
                   ? COLORS.correctBg
                   : COLORS.wrongBg
-                : wasChosen && isThisCorrect
+                : isCorrect && wasChosen
                   ? COLORS.correctBg
-                  : wasChosen && !isThisCorrect
+                  : !isCorrect && wasChosen
                     ? COLORS.wrongBg
-                    : isThisCorrect
-                      ? COLORS.correctBg
-                      : COLORS.bgDeep;
+                    : COLORS.bgDeep;
 
               const borderColor = !revealed
                 ? isWahrButton
                   ? COLORS.correctBorder
                   : COLORS.wrongBorder
-                : isThisCorrect
+                : isCorrect && wasChosen
                   ? COLORS.correctBorder
-                  : wasChosen
+                  : !isCorrect && wasChosen
                     ? COLORS.wrongBorder
                     : COLORS.rim1;
 
@@ -131,9 +161,9 @@ export function TrueFalseQuestion({
                 ? isWahrButton
                   ? COLORS.correctText
                   : COLORS.wrongText
-                : isThisCorrect
+                : isCorrect && wasChosen
                   ? COLORS.correctText
-                  : wasChosen
+                  : !isCorrect && wasChosen
                     ? COLORS.wrongText
                     : COLORS.textFaint;
 
@@ -156,7 +186,7 @@ export function TrueFalseQuestion({
                     boxShadow: revealed ? "none" : PIXEL_SHADOW,
                     color: textColor,
                     fontSize: 13,
-                    cursor: revealed ? "default" : "pointer",
+                    cursor: revealed || isSubmitting ? "default" : "pointer",
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
@@ -172,6 +202,20 @@ export function TrueFalseQuestion({
               );
             })}
           </div>
+
+          {submitError && (
+            <p
+              className="q-pixel"
+              style={{
+                fontSize: 8,
+                color: COLORS.wrongText,
+                lineHeight: 1.8,
+                margin: 0,
+              }}
+            >
+              {submitError}
+            </p>
+          )}
 
           {revealed && (
             <FeedbackBar

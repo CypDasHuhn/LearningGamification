@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useClientAuth } from "~/hooks/useClientAuth";
 
@@ -34,10 +34,14 @@ const buttonStyle = {
 };
 
 export function Welcome() {
-  const [splash] = useState(() => randomSplash());
+  const [splash, setSplash] = useState(SPLASH_TEXTS[0]);
   const navigate = useNavigate();
 
   const { isAuth, logout, loginAsGuest } = useClientAuth();
+
+  useEffect(() => {
+    setSplash(randomSplash());
+  }, []);
 
   function handleGuestLogin() {
     loginAsGuest(() => navigate("/chapter-selection"));

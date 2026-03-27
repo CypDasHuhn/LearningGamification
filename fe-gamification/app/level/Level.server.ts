@@ -7,7 +7,7 @@ const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
 /**
  * Fetches the question data for a level by its ID.
  *
- * Attempts an authenticated API call to `GET /question-sets/{levelId}/questions`
+ * Attempts an authenticated API call to `GET /questions?questionSetId={levelId}`
  * when an `auth_token` cookie is present. Falls back to the static mock data
  * if the request fails or no token is available.
  *
@@ -24,7 +24,8 @@ export async function fetchLevelData(
 
   if (auth?.token) {
     try {
-      const res = await fetch(`${API_BASE}/question-sets/${levelId}/questions`, {
+      const query = new URLSearchParams({ questionSetId: String(levelId) }).toString();
+      const res = await fetch(`${API_BASE}/questions?${query}`, {
         headers: {
           Authorization: `Bearer ${auth.token}`,
           Accept: "application/json",

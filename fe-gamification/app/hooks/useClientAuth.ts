@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   getAuthFromCookies,
   isAuthenticated,
@@ -9,11 +9,7 @@ import {
 
 /** Return value of {@link useClientAuth}. */
 export interface UseClientAuthResult {
-  /**
-   * `true` only during the server-side render phase before cookies can be read.
-   * Use this to suppress a content flash (show a skeleton or "Gast" placeholder)
-   * until the real auth state is known.
-   */
+  /** `true` until client-side cookie state has been read. */
   loading: boolean;
   /**
    * `true` when any session is active — covers both real users and guests.
@@ -40,12 +36,11 @@ export interface UseClientAuthResult {
 /**
  * SSR-safe hook for reading and mutating client-side authentication state.
  *
- * Reads cookies synchronously via a lazy `useState` initialiser, so there
- * is no `useEffect`-based hydration flash — the correct auth state is
- * available on the very first render in the browser.
+ * Uses a hydration-safe two-phase model:
+ * - initial render (SSR + first client pass): `loading=true`, guest defaults
+ * - post-mount effect: reads cookies and updates auth state
  *
- * On the server (SSR), `document` is undefined, so `loading` is `true` and
- * all other fields are at their zero value until the first client render.
+ * This avoids SSR/client markup mismatches on pages that display user names.
  *
  * @example
  * const { isAuth, auth, logout } = useClientAuth();
@@ -56,17 +51,15 @@ export function useClientAuth(): UseClientAuthResult {
     loading: boolean;
     isAuth: boolean;
     auth: AuthCookies | null;
-  }>(() => {
-    // SSR guard: `document` does not exist on the server.
-    if (typeof document === "undefined") {
-      return { loading: true, isAuth: false, auth: null };
-    }
-    return {
+  }>({ loading: true, isAuth: false, auth: null });
+
+  useEffect(() => {
+    setState({
       loading: false,
       isAuth: isAuthenticated(),
       auth: getAuthFromCookies(),
-    };
-  });
+    });
+  }, []);
 
   function logout(): void {
     clearAuthCookies();
