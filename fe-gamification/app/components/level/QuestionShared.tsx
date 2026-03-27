@@ -55,8 +55,6 @@ export function getButtonColors(state: ButtonState): ButtonVisualState {
 
 /** CSS keyframe animations and utility classes used by all question components. */
 export const QUESTION_KEYFRAMES = `
-  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-
   @keyframes fadeSlideIn {
     from { opacity: 0; transform: translateY(14px); }
     to   { opacity: 1; transform: translateY(0); }
