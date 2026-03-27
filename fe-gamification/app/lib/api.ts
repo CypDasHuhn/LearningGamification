@@ -1,6 +1,18 @@
 import { getAuthFromCookies } from "./auth-cookies";
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
+const DEFAULT_API_BASE = "http://localhost:8080";
+const REQUEST_TIMEOUT_MS = 10000;
+
+function resolveApiBase(): string {
+  if (typeof window !== "undefined") {
+    const runtimeApiBase = (window as Window & { __API_BASE__?: string }).__API_BASE__;
+    if (runtimeApiBase) return runtimeApiBase;
+  }
+  const serverRuntimeBase =
+    (typeof process !== "undefined" ? process.env?.BACKEND_URL : undefined) ??
+    import.meta.env.VITE_API_URL;
+  return serverRuntimeBase ?? DEFAULT_API_BASE;
+}
 
 /** HTTP methods supported by the API client. */
 export type ApiMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -47,12 +59,26 @@ export async function apiRequest<T>(
     }
   }
 
-  const url = endpoint.startsWith("http") ? endpoint : `${API_BASE}${endpoint}`;
-  const res = await fetch(url, {
-    method,
-    headers: reqHeaders,
-    ...(body !== undefined && { body: JSON.stringify(body) }),
-  });
+  const url = endpoint.startsWith("http") ? endpoint : `${resolveApiBase()}${endpoint}`;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method,
+      headers: reqHeaders,
+      signal: controller.signal,
+      ...(body !== undefined && { body: JSON.stringify(body) }),
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(`API request timed out after ${REQUEST_TIMEOUT_MS}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!res.ok) {
     const text = await res.text();

@@ -2,7 +2,10 @@ import type { LevelData } from "~/components/types";
 import { MOCK_LEVEL_DATA } from "../mock/Mockdata";
 import { parseAuthFromCookieHeader } from "~/lib/auth-cookies";
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
+const API_BASE =
+  (typeof process !== "undefined" ? process.env?.BACKEND_URL : undefined) ??
+  import.meta.env.VITE_API_URL ??
+  "http://localhost:8080";
 
 /**
  * Fetches the question data for a level by its ID.

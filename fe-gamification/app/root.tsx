@@ -13,6 +13,11 @@ import "./app.css";
 export const links: Route.LinksFunction = () => [];
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const runtimeApiBase =
+    (typeof process !== "undefined" ? process.env?.BACKEND_URL : undefined) ??
+    import.meta.env.VITE_API_URL ??
+    "http://localhost:8080";
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -20,6 +25,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.__API_BASE__ = ${JSON.stringify(runtimeApiBase)};`,
+          }}
+        />
       </head>
       <body>
         {children}

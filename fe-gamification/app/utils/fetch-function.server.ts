@@ -12,7 +12,7 @@ export const fetchFunction = async ({
 }) => {
   // Get projectId from request if available, otherwise use provided projectId
   const BACKEND_URL = (
-    process.env.BACKEND_URL || "http://0.0.0.0:8080"
+    process.env.BACKEND_URL || "http://localhost:8080"
   ).replace(/\/$/, "");
 
   const isGetOrHead =
