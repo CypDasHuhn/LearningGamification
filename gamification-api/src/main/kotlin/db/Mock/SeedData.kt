@@ -1,139 +1,75 @@
 package dev.gamification.backend.db
 
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.transactions.TransactionManager
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 
+private const val FIRST_SEEDED_QUESTION_ID = 1
+private const val DEMO_USER_NAME = "demo-user"
+private const val DEMO_USER_PASSWORD = "demo-pass-123"
+private const val SQLITE_SEED_RESOURCE_PATH = "seed/questions-seed.sqlite.sql"
+
 fun seedMockData() {
-    if (Teams.selectAll().limit(1).firstOrNull() != null) {
+    if (Questions.selectAll().where { Questions.id eq FIRST_SEEDED_QUESTION_ID }.limit(1).firstOrNull() != null) {
         return
     }
 
-    val engineeringTeamId = Teams.insertAndGetId {
-        it[name] = "Engineering"
-    }
-    val productTeamId = Teams.insertAndGetId {
-        it[name] = "Product"
-    }
+    seedQuestionsFromSqlResource()
+    seedDemoUser()
+}
 
-    val kotlinThemeId = Themes.insertAndGetId {
-        it[name] = "Kotlin Basics"
-        it[description] = "Core Kotlin concepts for backend developers."
-    }
-    val ktorThemeId = Themes.insertAndGetId {
-        it[name] = "Ktor"
-        it[description] = "Routing, plugins, and request handling."
-    }
+private fun seedQuestionsFromSqlResource() {
+    val stream =
+            Thread.currentThread().contextClassLoader.getResourceAsStream(SQLITE_SEED_RESOURCE_PATH)
+                    ?: error("Missing seed SQL resource: $SQLITE_SEED_RESOURCE_PATH")
 
-    val backendSetId = QuestionSets.insertAndGetId {
-        it[teamId] = engineeringTeamId
-        it[title] = "Backend Fundamentals"
-    }
-    val onboardingSetId = QuestionSets.insertAndGetId {
-        it[teamId] = productTeamId
-        it[title] = "Product Onboarding"
-    }
+    val statements =
+            stream.bufferedReader(StandardCharsets.UTF_8).useLines { lines ->
+                lines
+                        .map { it.trim() }
+                        .filter { it.isNotEmpty() && !it.startsWith("--") }
+                        .map { it.removeSuffix(";") }
+                        .toList()
+            }
 
-    val mcQuestionId = Questions.insertAndGetId {
-        it[questionSetId] = backendSetId
-        it[questionType] = QuestionType.MC
-        it[startText] = "What does JVM stand for?"
-        it[imageUrl] = null
-        it[endText] = null
-        it[allowsMultiple] = false
-        it[points] = 10
+    val transaction = TransactionManager.current()
+    statements.forEach { statement ->
+        transaction.exec(statement)
     }
+}
 
-    val tfQuestionId = Questions.insertAndGetId {
-        it[questionSetId] = onboardingSetId
-        it[questionType] = QuestionType.TF
-        it[startText] = "A product requirement document should define success metrics."
-        it[imageUrl] = null
-        it[endText] = null
-        it[allowsMultiple] = false
-        it[points] = 10
-    }
+private fun seedDemoUser() {
+    val now = System.currentTimeMillis()
+    val existingDemoUser = Users.selectAll().where { Users.userName eq DEMO_USER_NAME }.limit(1).firstOrNull()
 
-    val gapQuestionId = Questions.insertAndGetId {
-        it[questionSetId] = backendSetId
-        it[questionType] = QuestionType.GAP
-        it[startText] = "Ktor is built with"
-        it[imageUrl] = null
-        it[endText] = "coroutines."
-        it[allowsMultiple] = false
-        it[points] = 10
-    }
+    val demoUserId =
+            existingDemoUser?.get(Users.id)
+                    ?: Users.insertAndGetId {
+                        it[userName] = DEMO_USER_NAME
+                        it[passwordHash] = hashPassword(DEMO_USER_PASSWORD)
+                        it[createdAt] = now
+                    }
 
-    QuestionThemes.insert {
-        it[questionId] = mcQuestionId
-        it[themeId] = kotlinThemeId
-    }
-    QuestionThemes.insert {
-        it[questionId] = gapQuestionId
-        it[themeId] = ktorThemeId
-    }
-    QuestionThemes.insert {
-        it[questionId] = tfQuestionId
-        it[themeId] = kotlinThemeId
-    }
+    val existingProgress =
+            UserQuestionProgress
+                    .selectAll()
+                    .where {
+                        (UserQuestionProgress.userId eq demoUserId) and
+                                (UserQuestionProgress.questionId eq FIRST_SEEDED_QUESTION_ID)
+                    }
+                    .limit(1)
+                    .firstOrNull()
 
-    McAnswers.insert {
-        it[questionId] = mcQuestionId
-        it[optionText] = "Java Virtual Machine"
-        it[isCorrect] = true
-        it[optionOrder] = 1
-    }
-    McAnswers.insert {
-        it[questionId] = mcQuestionId
-        it[optionText] = "Java Variable Method"
-        it[isCorrect] = false
-        it[optionOrder] = 2
-    }
-    McAnswers.insert {
-        it[questionId] = tfQuestionId
-        it[optionText] = "True"
-        it[isCorrect] = true
-        it[optionOrder] = 1
-    }
-    McAnswers.insert {
-        it[questionId] = tfQuestionId
-        it[optionText] = "False"
-        it[isCorrect] = false
-        it[optionOrder] = 2
-    }
-
-    val gapFieldId = GapFields.insertAndGetId {
-        it[questionId] = gapQuestionId
-        it[gapIndex] = 0
-        it[textBefore] = "Ktor is built with"
-        it[textAfter] = "coroutines."
-    }
-
-    GapOptions.insert {
-        it[gapId] = gapFieldId
-        it[optionText] = "Kotlin"
-        it[isCorrect] = true
-        it[optionOrder] = 1
-    }
-    GapOptions.insert {
-        it[gapId] = gapFieldId
-        it[optionText] = "Ruby"
-        it[isCorrect] = false
-        it[optionOrder] = 2
-    }
-
-    val demoUserId = Users.insertAndGetId {
-        it[userName] = "demo-user"
-        it[passwordHash] = hashPassword("demo-pass-123")
-        it[createdAt] = System.currentTimeMillis()
-    }
-
-    UserQuestionProgress.insert {
-        it[userId] = demoUserId
-        it[questionId] = mcQuestionId
-        it[completedAt] = System.currentTimeMillis()
+    if (existingProgress == null) {
+        UserQuestionProgress.insert {
+            it[userId] = demoUserId
+            it[questionId] = FIRST_SEEDED_QUESTION_ID
+            it[completedAt] = now
+        }
     }
 }
 
