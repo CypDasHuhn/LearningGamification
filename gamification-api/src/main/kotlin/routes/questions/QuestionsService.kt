@@ -97,6 +97,8 @@ fun getQuestionsForUser(userId: Int, questionSetId: Int?): List<QuestionResponse
                         GapFieldResponse(
                             gapId = gapId,
                             gapIndex = gapField[GapFields.gapIndex],
+                            textBefore = gapField[GapFields.textBefore],
+                            textAfter = gapField[GapFields.textAfter],
                             options = options,
                         )
                     }
@@ -213,6 +215,8 @@ fun getQuestionAnswers(questionId: Int): QuestionAnswersResult =
                     GapFieldResponse(
                         gapId = gapId,
                         gapIndex = field[GapFields.gapIndex],
+                        textBefore = field[GapFields.textBefore],
+                        textAfter = field[GapFields.textAfter],
                         options =
                             optionsByGapId[gapId].orEmpty().map { option ->
                                 GapOptionResponse(

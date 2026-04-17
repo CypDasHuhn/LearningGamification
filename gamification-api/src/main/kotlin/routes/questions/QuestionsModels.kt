@@ -38,6 +38,8 @@ data class McAnswerResponse(
 data class GapFieldResponse(
     val gapId: Int,
     val gapIndex: Int,
+    val textBefore: String? = null,
+    val textAfter: String? = null,
     val options: List<GapOptionResponse> = emptyList(),
 )
 
