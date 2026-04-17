@@ -21,7 +21,10 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     throw redirect("/level-selection");
   }
 
-  const levelData = await fetchLevelData(levelId, request.headers.get("Cookie"));
+  const levelData = await fetchLevelData(
+    levelId,
+    request.headers.get("Cookie"),
+  );
 
   if (!levelData) {
     throw data("Level nicht gefunden", { status: 404 });
@@ -30,6 +33,12 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const chapterTitle = url.searchParams.get("chapterTitle") ?? "";
   const chapterId = url.searchParams.get("chapter") ?? "";
+  console.log("chapterTitle", chapterTitle);
+  console.log("chapterId", chapterId);
+
+  console.log("levelData", levelData.questions[1]);
+  console.log("gapfields", levelData.questions[1].gapFields);
+  console.log("OPTIONS", levelData.questions[1].gapFields[0].options);
 
   return { levelData, chapterTitle, chapterId };
 }

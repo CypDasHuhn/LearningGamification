@@ -57,6 +57,10 @@ export type GapFieldResponse = {
   gapId: number;
   /** 0-based index determining the gap's position in the rendered code. */
   gapIndex: number;
+  /** Optional text shown immediately before this gap. */
+  textBefore?: string | null;
+  /** Optional text shown immediately after this gap. */
+  textAfter?: string | null;
   options: GapOptionResponse[];
 };
 

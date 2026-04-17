@@ -23,6 +23,109 @@ type LevelPhase =
   | { phase: "question"; currentIndex: number; correctCount: number }
   | { phase: "result"; correctCount: number; total: number };
 
+const GAP_PLACEHOLDER_REGEX =
+  /(\{\{\s*gap\s*\}\}|\[\[\s*gap\s*\]\]|___+|\[l[üu]cke\]|\[gap\])/gi;
+const GAP_PLACEHOLDER_TOKEN_REGEX =
+  /^(\{\{\s*gap\s*\}\}|\[\[\s*gap\s*\]\]|___+|\[l[üu]cke\]|\[gap\])$/i;
+
+function buildGapCodeLines(
+  sortedGaps: {
+    gapId: number;
+    gapIndex: number;
+    textBefore?: string | null;
+    textAfter?: string | null;
+  }[],
+  startText: string | null,
+  endText: string | null,
+): CodeToken[][] {
+  const hasGapContextText = sortedGaps.some(
+    (gap) =>
+      typeof gap.textBefore === "string" ||
+      typeof gap.textAfter === "string",
+  );
+
+  if (hasGapContextText) {
+    const codeLines: CodeToken[][] = [[]];
+
+    const appendText = (text: string | null | undefined) => {
+      if (!text) return;
+      const parts = text.split(/\r?\n/);
+      parts.forEach((part, index) => {
+        if (index > 0) codeLines.push([]);
+        if (part) {
+          codeLines[codeLines.length - 1].push({ type: "text", text: part });
+        }
+      });
+    };
+
+    sortedGaps.forEach((gap, index) => {
+      appendText(gap.textBefore);
+      codeLines[codeLines.length - 1].push({ type: "gap", gapId: gap.gapId });
+      appendText(gap.textAfter);
+
+      if (index < sortedGaps.length - 1) {
+        const lastLine = codeLines[codeLines.length - 1];
+        const lastToken = lastLine[lastLine.length - 1];
+        if (lastToken?.type === "text" && !/\s$/.test(lastToken.text)) {
+          lastLine.push({ type: "text", text: " " });
+        }
+      }
+    });
+
+    return codeLines.filter((line) => line.length > 0);
+  }
+
+  const baseText = [startText, endText].filter(Boolean).join(" ").trim();
+
+  if (baseText.length > 0) {
+    const lines = baseText.split(/\r?\n/);
+    let nextGapIndex = 0;
+    let usedPlaceholder = false;
+    const codeLines = lines.map<CodeToken[]>((line) => {
+      const segments = line.split(GAP_PLACEHOLDER_REGEX);
+      const lineTokens: CodeToken[] = [];
+
+      for (const segment of segments) {
+        if (!segment) continue;
+        if (GAP_PLACEHOLDER_TOKEN_REGEX.test(segment)) {
+          usedPlaceholder = true;
+          const gap = sortedGaps[nextGapIndex];
+          if (gap) {
+            lineTokens.push({ type: "gap", gapId: gap.gapId });
+            nextGapIndex += 1;
+          } else {
+            lineTokens.push({ type: "text", text: segment });
+          }
+        } else {
+          lineTokens.push({ type: "text", text: segment });
+        }
+      }
+
+      return lineTokens.length > 0 ? lineTokens : [{ type: "text", text: line }];
+    });
+
+    if (usedPlaceholder) {
+      for (; nextGapIndex < sortedGaps.length; nextGapIndex += 1) {
+        const gap = sortedGaps[nextGapIndex];
+        codeLines.push([
+          { type: "text", text: `Lücke ${gap.gapIndex}: ` },
+          { type: "gap", gapId: gap.gapId },
+        ]);
+      }
+      return codeLines;
+    }
+  }
+
+  // Fallback ohne Text-Platzhalter: nummerierte Lücken statt "random" Leerzeilen.
+  const fallbackLine: CodeToken[] = [];
+  sortedGaps.forEach((gap, index) => {
+    if (index > 0) fallbackLine.push({ type: "text", text: "   " });
+    fallbackLine.push({ type: "text", text: `Lücke ${gap.gapIndex}: ` });
+    fallbackLine.push({ type: "gap", gapId: gap.gapId });
+  });
+  return fallbackLine.length > 0 ? [fallbackLine] : [];
+}
+
 
 function ResultScreen({
   title,
@@ -224,9 +327,7 @@ export function Level({ questionSetId, title, chapterTitle, chapterId = "", ques
         const sortedGaps = [...q.gapFields].sort(
           (a, b) => a.gapIndex - b.gapIndex,
         );
-        const codeLines: CodeToken[][] = sortedGaps.map((gf) => [
-          { type: "gap", gapId: gf.gapId },
-        ]);
+        const codeLines = buildGapCodeLines(sortedGaps, q.startText, q.endText);
         const gaps: GapAnswer[] = sortedGaps.map((gf) => {
           const opts = [...gf.options].sort(
             (a, b) => a.optionOrder - b.optionOrder,
