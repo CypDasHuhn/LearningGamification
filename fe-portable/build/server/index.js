@@ -930,7 +930,6 @@ function JetSprite({
 function ChapterNode({
   chapter
 }) {
-  const isLocked = chapter.stars === -1;
   return /* @__PURE__ */ jsxs("div", {
     className: "absolute flex flex-col items-center gap-1.5",
     style: {
@@ -940,15 +939,7 @@ function ChapterNode({
       width: NODE_RADIUS * 2 + 48,
       pointerEvents: "none"
     },
-    children: [isLocked ? /* @__PURE__ */ jsx("div", {
-      className: "flex items-center justify-center rounded-full",
-      style: {
-        width: NODE_RADIUS * 2,
-        height: NODE_RADIUS * 2,
-        fontSize: "28px"
-      },
-      children: "🔒"
-    }) : /* @__PURE__ */ jsx(Link, {
+    children: [/* @__PURE__ */ jsx(Link, {
       to: `/level-selection?chapter=${chapter.id}`,
       className: "flex items-center justify-center rounded-full font-pixel hover:scale-110 active:scale-95 transition-transform",
       style: {
@@ -1060,9 +1051,8 @@ const chapterSelection = UNSAFE_withComponentProps(function ChapterSelection() {
     rocks,
     flowers
   } = decorations.current;
-  const lastUnlockedIndex = chapters.reduce((last, ch, idx) => ch.stars !== -1 ? idx : last, 0);
-  const maxReachableSampleIndex = samples.length > 0 ? findClosestSampleIndex(samples, chapters[lastUnlockedIndex]) : 0;
-  const startChapter = chapters.find((c) => c.stars === 0) ?? chapters[lastUnlockedIndex];
+  const maxReachableSampleIndex = samples.length > 0 ? samples.length - 1 : 0;
+  const startChapter = chapters.find((c) => c.stars === 0) ?? chapters[0];
   const initialSampleIndex = samples.length > 0 ? findClosestSampleIndex(samples, startChapter) : 0;
   const {
     ref: scrollContainerRef,
@@ -1092,7 +1082,7 @@ const chapterSelection = UNSAFE_withComponentProps(function ChapterSelection() {
       const pos = samples[characterSampleIndexRef.current];
       if (!pos || chapters.length === 0) return;
       const nearest = findNearestByX(chapters, pos.x);
-      if (nearest.stars !== -1 && Math.abs(nearest.x - pos.x) < NODE_RADIUS) {
+      if (Math.abs(nearest.x - pos.x) < NODE_RADIUS) {
         navigate(`/level-selection?chapter=${nearest.id}`);
       }
     }
@@ -1168,7 +1158,7 @@ const chapterSelection = UNSAFE_withComponentProps(function ChapterSelection() {
                 y: ch.y,
                 isCompleted: ch.stars > 0,
                 isCurrent: currentProgressChapter?.id === ch.id,
-                isLocked: ch.stars === -1,
+                isLocked: false,
                 isCharacterNearby: isCharacterOnNode && nearestChapter?.id === ch.id
               }, ch.id)), trees.map((tree, i) => /* @__PURE__ */ jsx(TreeSVG, {
                 x: tree.x,
@@ -1212,13 +1202,6 @@ const chapterSelection = UNSAFE_withComponentProps(function ChapterSelection() {
         },
         children: "← → TAXI  |  ↵ KAPITEL STARTEN"
       })]
-    }), /* @__PURE__ */ jsx("footer", {
-      className: "flex flex-wrap items-center justify-center gap-3 md:gap-6 px-4 py-4 bg-stone-900/50 dark:bg-stone-950/70 border-t-2 border-stone-700 dark:border-stone-800",
-      children: /* @__PURE__ */ jsx(Link, {
-        to: "/einstellungen",
-        className: "font-pixel text-xs sm:text-sm text-stone-300 hover:text-amber-400 py-2 px-3 rounded border-2 border-stone-600 hover:border-amber-500/50 transition-colors",
-        children: "Einstellungen..."
-      })
     }), /* @__PURE__ */ jsxs("div", {
       className: "flex justify-between items-center px-4 py-2 text-stone-600 dark:text-stone-500 font-pixel text-xs",
       children: [/* @__PURE__ */ jsx("span", {
@@ -1538,7 +1521,6 @@ function LevelNode({
   chapterTitle = "",
   chapterId = ""
 }) {
-  const isLocked = level.stars === -1;
   return /* @__PURE__ */ jsx(
     "div",
     {
@@ -1550,18 +1532,7 @@ function LevelNode({
         width: NODE_RADIUS * 2 + 48,
         pointerEvents: "none"
       },
-      children: isLocked ? /* @__PURE__ */ jsx(
-        "div",
-        {
-          className: "flex items-center justify-center rounded-full",
-          style: {
-            width: NODE_RADIUS * 2,
-            height: NODE_RADIUS * 2,
-            fontSize: "28px"
-          },
-          children: "🔒"
-        }
-      ) : /* @__PURE__ */ jsx(
+      children: /* @__PURE__ */ jsx(
         Link,
         {
           to: `/level/${level.id}?chapterTitle=${encodeURIComponent(chapterTitle)}&chapter=${chapterId}`,
@@ -1681,12 +1652,8 @@ function LevelSelection({ levels }) {
     generateDecorationPositions(levels)
   );
   const { trees, rocks, flowers } = decorations.current;
-  const lastUnlockedLevelIndex = levels.reduce(
-    (lastIndex, level, index) => level.stars !== -1 ? index : lastIndex,
-    0
-  );
-  const maxReachableSampleIndex = samples.length > 0 ? findClosestSampleIndex(samples, levels[lastUnlockedLevelIndex]) : 0;
-  const startLevel = levels.find((level) => level.stars === 0) ?? levels[lastUnlockedLevelIndex];
+  const maxReachableSampleIndex = samples.length > 0 ? samples.length - 1 : 0;
+  const startLevel = levels.find((level) => level.stars === 0) ?? levels[0];
   const initialSampleIndex = samples.length > 0 ? findClosestSampleIndex(samples, startLevel) : 0;
   const { ref: scrollContainerRef, handlers: dragHandlers } = useDragScroll();
   const {
@@ -1714,8 +1681,8 @@ function LevelSelection({ levels }) {
       const currentPosition = samples[characterSampleIndexRef.current];
       if (!currentPosition || levels.length === 0) return;
       const nearestLevel = findNearestByX(levels, currentPosition.x);
-      const isOnUnlockedNode = nearestLevel.stars !== -1 && Math.abs(nearestLevel.x - currentPosition.x) < NODE_RADIUS;
-      if (isOnUnlockedNode) {
+      const isOnNode = Math.abs(nearestLevel.x - currentPosition.x) < NODE_RADIUS;
+      if (isOnNode) {
         navigate(
           `/level/${nearestLevel.id}?chapterTitle=${encodeURIComponent(chapterTitle)}&chapter=${searchParams.get("chapter") ?? ""}`
         );
@@ -1723,10 +1690,24 @@ function LevelSelection({ levels }) {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [levels, navigate, samples, chapterTitle, searchParams, characterSampleIndexRef]);
+  }, [
+    levels,
+    navigate,
+    samples,
+    chapterTitle,
+    searchParams,
+    characterSampleIndexRef
+  ]);
   return /* @__PURE__ */ jsxs("main", { className: "min-h-screen flex flex-col bg-linear-to-b from-sky-300 via-amber-100 to-emerald-200", children: [
     /* @__PURE__ */ jsx("style", { children: CHARACTER_KEYFRAMES }),
-    /* @__PURE__ */ jsx(IngameHeader, { siteName: "Level Auswahl", backTo: "/chapter-selection", backLabel: "KAPITEL" }),
+    /* @__PURE__ */ jsx(
+      IngameHeader,
+      {
+        siteName: "Level Auswahl",
+        backTo: "/chapter-selection",
+        backLabel: "KAPITEL"
+      }
+    ),
     /* @__PURE__ */ jsxs("div", { className: "flex-1 flex flex-col items-center justify-center py-4", children: [
       /* @__PURE__ */ jsxs("div", { className: "flex items-center w-full gap-2 px-2", children: [
         /* @__PURE__ */ jsx(
@@ -1855,7 +1836,7 @@ function LevelSelection({ levels }) {
                             y: level.y,
                             isCompleted: level.stars > 0,
                             isCurrent: currentProgressLevel?.id === level.id,
-                            isLocked: level.stars === -1,
+                            isLocked: false,
                             isCharacterNearby: isCharacterOnNode && nearestLevelToCharacter?.id === level.id
                           },
                           level.id
@@ -1930,14 +1911,6 @@ function LevelSelection({ levels }) {
         }
       )
     ] }),
-    /* @__PURE__ */ jsx("footer", { className: "flex flex-wrap items-center justify-center gap-3 md:gap-6 px-4 py-4 bg-stone-900/50 dark:bg-stone-950/70 border-t-2 border-stone-700 dark:border-stone-800", children: /* @__PURE__ */ jsx(
-      Link,
-      {
-        to: "/einstellungen",
-        className: "font-pixel text-xs sm:text-sm text-stone-300 hover:text-amber-400 py-2 px-3 rounded border-2 border-stone-600 hover:border-amber-500/50 transition-colors",
-        children: "Einstellungen..."
-      }
-    ) }),
     /* @__PURE__ */ jsxs("div", { className: "flex justify-between items-center px-4 py-2 text-stone-600 dark:text-stone-500 font-pixel text-xs", children: [
       /* @__PURE__ */ jsx("span", { children: "Learning Gamification v1.0" }),
       /* @__PURE__ */ jsx("span", { className: "opacity-80", children: "© 2025" })
@@ -4119,11 +4092,6 @@ const mainMenuItems = [
   { to: "/fortschritt", label: "Fortschritt", icon: "📊" },
   { to: "/rangliste", label: "Rangliste", icon: "🏆" }
 ];
-const footerMenuItems = [
-  { to: "/einstellungen", label: "Einstellungen..." },
-  { href: "https://reactrouter.com/docs", label: "Docs", external: true },
-  { href: "https://rmx.as/discord", label: "Discord", external: true }
-];
 const buttonClass = "menu-button block w-full py-4 px-6 font-pixel text-base sm:text-lg text-stone-200 bg-stone-600 dark:bg-stone-700 border-4 border-stone-800 dark:border-stone-800 rounded hover:brightness-110 active:scale-[0.98] transition-all text-center";
 const buttonStyle = {
   boxShadow: "inset 2px 2px 0 rgba(255,255,255,0.15), 4px 4px 0 rgba(0,0,0,0.4)"
@@ -4231,27 +4199,6 @@ function Welcome() {
         )
       ) })
     ] }),
-    /* @__PURE__ */ jsx("footer", { className: "flex flex-wrap items-center justify-center gap-3 md:gap-6 px-4 py-4 bg-stone-900/50 dark:bg-stone-950/70 border-t-2 border-stone-700 dark:border-stone-800", children: footerMenuItems.map(
-      (item) => "external" in item && item.external ? /* @__PURE__ */ jsx(
-        "a",
-        {
-          href: item.href,
-          target: "_blank",
-          rel: "noreferrer",
-          className: "footer-btn font-pixel text-xs sm:text-sm text-stone-300 hover:text-amber-400 py-2 px-3 rounded border-2 border-stone-600 hover:border-amber-500/50 transition-colors",
-          children: item.label
-        },
-        item.label
-      ) : /* @__PURE__ */ jsx(
-        Link,
-        {
-          to: item.to,
-          className: "footer-btn font-pixel text-xs sm:text-sm text-stone-300 hover:text-amber-400 py-2 px-3 rounded border-2 border-stone-600 hover:border-amber-500/50 transition-colors",
-          children: item.label
-        },
-        item.label
-      )
-    ) }),
     /* @__PURE__ */ jsxs("div", { className: "flex justify-between items-center px-4 py-2 text-stone-600 dark:text-stone-500 font-pixel text-xs", children: [
       /* @__PURE__ */ jsx("span", { children: "Learning Gamification v1.0" }),
       /* @__PURE__ */ jsx("span", { className: "opacity-80", children: "© 2025" })
@@ -4362,8 +4309,8 @@ const route10 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.definePrope
   action,
   default: login
 }, Symbol.toStringTag, { value: "Module" }));
-const serverManifest = { "entry": { "module": "/assets/entry.client-DuOF485a.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js"], "css": [] }, "routes": { "root": { "id": "root", "parentId": void 0, "path": "", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": true, "module": "/assets/root--Lzucaff.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js"], "css": ["/assets/root-dPLC4NUv.css"], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/chapter-selection": { "id": "routes/chapter-selection", "parentId": "root", "path": "chapter-selection", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/chapter-selection-Dq8Atuxa.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/PlatformSVG-DIQjmj9n.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/level-selection": { "id": "routes/level-selection", "parentId": "root", "path": "level-selection", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/level-selection-BPXQcmka.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/PlatformSVG-DIQjmj9n.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/einstellungen": { "id": "routes/einstellungen", "parentId": "root", "path": "einstellungen", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/einstellungen-DV5mm3cW.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/fortschritt": { "id": "routes/fortschritt", "parentId": "root", "path": "fortschritt", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/fortschritt-DCIZtHQX.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/apiClient": { "id": "routes/apiClient", "parentId": "root", "path": "apiClient", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/apiClient-l0sNRNKZ.js", "imports": [], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/level.$id": { "id": "routes/level.$id", "parentId": "root", "path": "level/:id", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/level._id-tOqRTswf.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/api-CuYuvGDR.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/rangliste": { "id": "routes/rangliste", "parentId": "root", "path": "rangliste", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/rangliste-WYR10YBr.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/api-CuYuvGDR.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/register": { "id": "routes/register", "parentId": "root", "path": "register", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/register-BtK4quql.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/_index": { "id": "routes/_index", "parentId": "root", "path": void 0, "index": true, "caseSensitive": void 0, "hasAction": true, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/_index-B7k9SUXH.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/login": { "id": "routes/login", "parentId": "root", "path": "login", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/login-DRPmxo_L.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 } }, "url": "/assets/manifest-34ac9132.js", "version": "34ac9132", "sri": void 0 };
-const assetsBuildDirectory = "build\\client";
+const serverManifest = { "entry": { "module": "/assets/entry.client-DuOF485a.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js"], "css": [] }, "routes": { "root": { "id": "root", "parentId": void 0, "path": "", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": true, "module": "/assets/root-B759MrYk.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js"], "css": ["/assets/root-B8sW6ryh.css"], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/chapter-selection": { "id": "routes/chapter-selection", "parentId": "root", "path": "chapter-selection", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/chapter-selection-eks0r-Al.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/PlatformSVG-DIQjmj9n.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/level-selection": { "id": "routes/level-selection", "parentId": "root", "path": "level-selection", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/level-selection-C5jqG4fV.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/PlatformSVG-DIQjmj9n.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/einstellungen": { "id": "routes/einstellungen", "parentId": "root", "path": "einstellungen", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/einstellungen-DV5mm3cW.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/fortschritt": { "id": "routes/fortschritt", "parentId": "root", "path": "fortschritt", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/fortschritt-DCIZtHQX.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/apiClient": { "id": "routes/apiClient", "parentId": "root", "path": "apiClient", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/apiClient-l0sNRNKZ.js", "imports": [], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/level.$id": { "id": "routes/level.$id", "parentId": "root", "path": "level/:id", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/level._id-tOqRTswf.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/api-CuYuvGDR.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/rangliste": { "id": "routes/rangliste", "parentId": "root", "path": "rangliste", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/rangliste-WYR10YBr.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/api-CuYuvGDR.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/register": { "id": "routes/register", "parentId": "root", "path": "register", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/register-BtK4quql.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/_index": { "id": "routes/_index", "parentId": "root", "path": void 0, "index": true, "caseSensitive": void 0, "hasAction": true, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/_index-DBv3nlKE.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/login": { "id": "routes/login", "parentId": "root", "path": "login", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/login-DRPmxo_L.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 } }, "url": "/assets/manifest-d90278d6.js", "version": "d90278d6", "sri": void 0 };
+const assetsBuildDirectory = "build/client";
 const basename = "/";
 const future = { "unstable_optimizeDeps": false, "unstable_subResourceIntegrity": false, "unstable_trailingSlashAwareDataRequests": false, "v8_middleware": false, "v8_splitRouteModules": false, "v8_viteEnvironmentApi": false };
 const ssr = true;
