@@ -3,9 +3,27 @@ import { IngameHeader } from "~/components/ingame-header";
 import { useClientAuth } from "~/hooks/useClientAuth";
 
 const MOCK_PROGRESS = [
-  { chapter: "Kapitel 1", title: "Grundlagen", levels: 8, completed: 8, xp: 320 },
-  { chapter: "Kapitel 2", title: "Variablen & Typen", levels: 6, completed: 5, xp: 190 },
-  { chapter: "Kapitel 3", title: "Kontrollstrukturen", levels: 7, completed: 2, xp: 80 },
+  {
+    chapter: "Kapitel 1",
+    title: "Grundlagen",
+    levels: 8,
+    completed: 8,
+    xp: 320,
+  },
+  {
+    chapter: "Kapitel 2",
+    title: "Variablen & Typen",
+    levels: 6,
+    completed: 5,
+    xp: 190,
+  },
+  {
+    chapter: "Kapitel 3",
+    title: "Kontrollstrukturen",
+    levels: 7,
+    completed: 2,
+    xp: 80,
+  },
   { chapter: "Kapitel 4", title: "Funktionen", levels: 5, completed: 0, xp: 0 },
 ];
 
@@ -218,9 +236,7 @@ export default function Fortschritt() {
                       {xp > 0 ? xp.toLocaleString("de-DE") : "—"}
                     </span>
                   </div>
-                  {started && (
-                    <ProgressBar value={completed} max={levels} />
-                  )}
+                  {started && <ProgressBar value={completed} max={levels} />}
                   {!started && (
                     <div
                       className="w-full h-3 rounded bg-stone-900 border-2 border-stone-800"

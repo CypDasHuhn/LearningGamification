@@ -65,17 +65,9 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
   );
   const { trees, rocks, flowers } = decorations.current;
 
-  const lastUnlockedLevelIndex = levels.reduce(
-    (lastIndex, level, index) => (level.stars !== -1 ? index : lastIndex),
-    0,
-  );
-  const maxReachableSampleIndex =
-    samples.length > 0
-      ? findClosestSampleIndex(samples, levels[lastUnlockedLevelIndex])
-      : 0;
+  const maxReachableSampleIndex = samples.length > 0 ? samples.length - 1 : 0;
 
-  const startLevel =
-    levels.find((level) => level.stars === 0) ?? levels[lastUnlockedLevelIndex];
+  const startLevel = levels.find((level) => level.stars === 0) ?? levels[0];
   const initialSampleIndex =
     samples.length > 0 ? findClosestSampleIndex(samples, startLevel) : 0;
 
@@ -108,17 +100,16 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
   const svgPathD = buildSvgPathD(levels);
   const currentProgressLevel = levels.find((level) => level.stars === 0);
 
-  // Enter key — navigate to the nearest unlocked level node.
+  // Enter key — navigate to the nearest level node.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== "Enter") return;
       const currentPosition = samples[characterSampleIndexRef.current];
       if (!currentPosition || levels.length === 0) return;
       const nearestLevel = findNearestByX(levels, currentPosition.x);
-      const isOnUnlockedNode =
-        nearestLevel.stars !== -1 &&
+      const isOnNode =
         Math.abs(nearestLevel.x - currentPosition.x) < NODE_RADIUS;
-      if (isOnUnlockedNode) {
+      if (isOnNode) {
         navigate(
           `/level/${nearestLevel.id}?chapterTitle=${encodeURIComponent(chapterTitle)}&chapter=${searchParams.get("chapter") ?? ""}`,
         );
@@ -243,7 +234,7 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
                     y={level.y}
                     isCompleted={level.stars > 0}
                     isCurrent={currentProgressLevel?.id === level.id}
-                    isLocked={level.stars === -1}
+                    isLocked={false}
                     isCharacterNearby={
                       isCharacterOnNode &&
                       nearestLevelToCharacter?.id === level.id

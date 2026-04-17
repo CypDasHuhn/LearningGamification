@@ -21,8 +21,6 @@ export function LevelNode({
   chapterTitle = "",
   chapterId = "",
 }: LevelNodeProps) {
-  const isLocked = level.stars === -1;
-
   return (
     <div
       className="absolute flex flex-col items-center gap-1.5"
@@ -34,33 +32,20 @@ export function LevelNode({
         pointerEvents: "none",
       }}
     >
-      {isLocked ? (
-        <div
-          className="flex items-center justify-center rounded-full"
-          style={{
-            width: NODE_RADIUS * 2,
-            height: NODE_RADIUS * 2,
-            fontSize: "28px",
-          }}
-        >
-          🔒
-        </div>
-      ) : (
-        <Link
-          to={`/level/${level.id}?chapterTitle=${encodeURIComponent(chapterTitle)}&chapter=${chapterId}`}
-          className="flex items-center justify-center rounded-full font-pixel hover:scale-110 active:scale-95 transition-transform"
-          style={{
-            width: NODE_RADIUS * 2,
-            height: NODE_RADIUS * 2,
-            fontSize: "18px",
-            color: "#1c1917",
-            textShadow: "1px 1px 0 rgba(255,255,255,0.7)",
-            pointerEvents: "all",
-          }}
-        >
-          {level.id}
-        </Link>
-      )}
+      <Link
+        to={`/level/${level.id}?chapterTitle=${encodeURIComponent(chapterTitle)}&chapter=${chapterId}`}
+        className="flex items-center justify-center rounded-full font-pixel hover:scale-110 active:scale-95 transition-transform"
+        style={{
+          width: NODE_RADIUS * 2,
+          height: NODE_RADIUS * 2,
+          fontSize: "18px",
+          color: "#1c1917",
+          textShadow: "1px 1px 0 rgba(255,255,255,0.7)",
+          pointerEvents: "all",
+        }}
+      >
+        {level.id}
+      </Link>
     </div>
   );
 }

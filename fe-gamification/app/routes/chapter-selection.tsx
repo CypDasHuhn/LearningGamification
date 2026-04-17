@@ -11,11 +11,7 @@ import { useGameLoop } from "~/hooks/useGameLoop";
 import { useDragScroll } from "~/hooks/useDragScroll";
 
 import type { Level } from "../components/types";
-import {
-  MAP_WIDTH,
-  MAP_HEIGHT,
-  NODE_RADIUS,
-} from "../components/mapConstants";
+import { MAP_WIDTH, MAP_HEIGHT, NODE_RADIUS } from "../components/mapConstants";
 import { generateDecorationPositions } from "../components/design/positions/mapDecorations";
 import {
   buildPathSamples,
@@ -47,7 +43,10 @@ function computeChapterSpacing(chapterCount: number): number {
 
   const availableWidth = MAP_WIDTH - CHAPTER_START_X - CHAPTER_END_PADDING;
   const fitSpacing = Math.floor(availableWidth / (chapterCount - 1));
-  return Math.max(CHAPTER_MIN_SPACING, Math.min(CHAPTER_MAX_SPACING, fitSpacing));
+  return Math.max(
+    CHAPTER_MIN_SPACING,
+    Math.min(CHAPTER_MAX_SPACING, fitSpacing),
+  );
 }
 
 function computeMapWidth(chapters: Level[]): number {
@@ -85,16 +84,16 @@ function themesToChapters(themes: ThemeResponse[]): Level[] {
  */
 export async function loader({ request }: { request: Request }) {
   const cookieHeader = request.headers.get("Cookie");
-  const hasAuth  = parseAuthFromCookieHeader(cookieHeader) !== null;
-  const isGuest  = isGuestFromCookieHeader(cookieHeader);
+  const hasAuth = parseAuthFromCookieHeader(cookieHeader) !== null;
+  const isGuest = isGuestFromCookieHeader(cookieHeader);
   if (!hasAuth && !isGuest) return redirect("/");
-  const themes   = await apiGetServer<ThemeResponse[]>(cookieHeader, "/themes");
+  const themes = await apiGetServer<ThemeResponse[]>(cookieHeader, "/themes");
   const chapters = themes ? themesToChapters(themes) : FALLBACK_CHAPTERS;
   return { chapters };
 }
 
 // ─── Runway dimensions ────────────────────────────────────────────────────────
-const RW_TOP    = 181;
+const RW_TOP = 181;
 const RW_BOTTOM = 249;
 const RW_HEIGHT = RW_BOTTOM - RW_TOP;
 const RW_CENTER = (RW_TOP + RW_BOTTOM) / 2;
@@ -112,10 +111,10 @@ const JET_KEYFRAMES = `
 /** CSS div-based private jet sprite used on the chapter-selection runway. */
 function JetSprite({
   facingLeft = false,
-  isMoving   = false,
+  isMoving = false,
 }: {
   facingLeft?: boolean;
-  isMoving?:   boolean;
+  isMoving?: boolean;
 }) {
   return (
     <div
@@ -128,29 +127,109 @@ function JetSprite({
       }}
     >
       {/* ── Fuselage ── */}
-      <div style={{ position: "absolute", left: 10, top: 10, width: 60, height: 16, background: "#f1f5f9", borderRadius: "4px 50% 50% 4px" }} />
+      <div
+        style={{
+          position: "absolute",
+          left: 10,
+          top: 10,
+          width: 60,
+          height: 16,
+          background: "#f1f5f9",
+          borderRadius: "4px 50% 50% 4px",
+        }}
+      />
       {/* ── Nose / cockpit ── */}
-      <div style={{ position: "absolute", left: 58, top: 7, width: 26, height: 22, background: "#93c5fd", borderRadius: "2px 60% 60% 2px" }} />
+      <div
+        style={{
+          position: "absolute",
+          left: 58,
+          top: 7,
+          width: 26,
+          height: 22,
+          background: "#93c5fd",
+          borderRadius: "2px 60% 60% 2px",
+        }}
+      />
       {/* ── Gold accent stripe ── */}
-      <div style={{ position: "absolute", left: 10, top: 17, width: 52, height: 4, background: "#fbbf24" }} />
+      <div
+        style={{
+          position: "absolute",
+          left: 10,
+          top: 17,
+          width: 52,
+          height: 4,
+          background: "#fbbf24",
+        }}
+      />
       {/* ── Windows ── */}
       {[44, 34, 22].map((wx) => (
-        <div key={wx} style={{ position: "absolute", left: wx, top: 11, width: 7, height: 7, background: "#1d4ed8", borderRadius: 2, opacity: 0.85 }} />
+        <div
+          key={wx}
+          style={{
+            position: "absolute",
+            left: wx,
+            top: 11,
+            width: 7,
+            height: 7,
+            background: "#1d4ed8",
+            borderRadius: 2,
+            opacity: 0.85,
+          }}
+        />
       ))}
       {/* ── Main wing (below fuselage) ── */}
-      <div style={{ position: "absolute", left: 20, top: 24, width: 38, height: 12, background: "#e2e8f0", borderRadius: "1px 3px 6px 1px", transform: "skewX(14deg)" }} />
+      <div
+        style={{
+          position: "absolute",
+          left: 20,
+          top: 24,
+          width: 38,
+          height: 12,
+          background: "#e2e8f0",
+          borderRadius: "1px 3px 6px 1px",
+          transform: "skewX(14deg)",
+        }}
+      />
       {/* ── Vertical tail fin ── */}
-      <div style={{ position: "absolute", left: 7, top: 1, width: 12, height: 14, background: "#e2e8f0", borderRadius: "4px 4px 0 0", transform: "skewX(10deg)" }} />
+      <div
+        style={{
+          position: "absolute",
+          left: 7,
+          top: 1,
+          width: 12,
+          height: 14,
+          background: "#e2e8f0",
+          borderRadius: "4px 4px 0 0",
+          transform: "skewX(10deg)",
+        }}
+      />
       {/* ── Horizontal tail wing ── */}
-      <div style={{ position: "absolute", left: 3, top: 19, width: 22, height: 7, background: "#e2e8f0", borderRadius: "2px 4px 4px 2px" }} />
+      <div
+        style={{
+          position: "absolute",
+          left: 3,
+          top: 19,
+          width: 22,
+          height: 7,
+          background: "#e2e8f0",
+          borderRadius: "2px 4px 4px 2px",
+        }}
+      />
       {/* ── Engine exhaust ── */}
-      <div style={{
-        position: "absolute", left: -5, top: 15, width: 16, height: 6,
-        background: "linear-gradient(to left, #fbbf24 0%, #f97316 55%, transparent 100%)",
-        borderRadius: "4px 0 0 4px",
-        opacity: isMoving ? 1 : 0.45,
-        transition: "opacity 0.15s",
-      }} />
+      <div
+        style={{
+          position: "absolute",
+          left: -5,
+          top: 15,
+          width: 16,
+          height: 6,
+          background:
+            "linear-gradient(to left, #fbbf24 0%, #f97316 55%, transparent 100%)",
+          borderRadius: "4px 0 0 4px",
+          opacity: isMoving ? 1 : 0.45,
+          transition: "opacity 0.15s",
+        }}
+      />
     </div>
   );
 }
@@ -158,8 +237,6 @@ function JetSprite({
 // ─── Chapter node overlay ─────────────────────────────────────────────────────
 /** Clickable label overlay rendered above each chapter platform node. */
 function ChapterNode({ chapter }: { chapter: Level }) {
-  const isLocked = chapter.stars === -1;
-
   return (
     <div
       className="absolute flex flex-col items-center gap-1.5"
@@ -171,29 +248,20 @@ function ChapterNode({ chapter }: { chapter: Level }) {
         pointerEvents: "none",
       }}
     >
-      {isLocked ? (
-        <div
-          className="flex items-center justify-center rounded-full"
-          style={{ width: NODE_RADIUS * 2, height: NODE_RADIUS * 2, fontSize: "28px" }}
-        >
-          🔒
-        </div>
-      ) : (
-        <Link
-          to={`/level-selection?chapter=${chapter.id}`}
-          className="flex items-center justify-center rounded-full font-pixel hover:scale-110 active:scale-95 transition-transform"
-          style={{
-            width: NODE_RADIUS * 2,
-            height: NODE_RADIUS * 2,
-            fontSize: "18px",
-            color: "#1c1917",
-            textShadow: "1px 1px 0 rgba(255,255,255,0.7)",
-            pointerEvents: "all",
-          }}
-        >
-          {chapter.id}
-        </Link>
-      )}
+      <Link
+        to={`/level-selection?chapter=${chapter.id}`}
+        className="flex items-center justify-center rounded-full font-pixel hover:scale-110 active:scale-95 transition-transform"
+        style={{
+          width: NODE_RADIUS * 2,
+          height: NODE_RADIUS * 2,
+          fontSize: "18px",
+          color: "#1c1917",
+          textShadow: "1px 1px 0 rgba(255,255,255,0.7)",
+          pointerEvents: "all",
+        }}
+      >
+        {chapter.id}
+      </Link>
       <div
         className="font-pixel text-center leading-tight"
         style={{
@@ -227,14 +295,46 @@ function RunwaySVG({
   return (
     <g>
       {/* Gravel shoulder */}
-      <rect x={0} y={RW_TOP - 8} width={mapWidth} height={RW_HEIGHT + 16} fill="#5c5c46" />
+      <rect
+        x={0}
+        y={RW_TOP - 8}
+        width={mapWidth}
+        height={RW_HEIGHT + 16}
+        fill="#5c5c46"
+      />
       {/* Asphalt surface */}
-      <rect x={0} y={RW_TOP} width={mapWidth} height={RW_HEIGHT} fill="#373737" />
+      <rect
+        x={0}
+        y={RW_TOP}
+        width={mapWidth}
+        height={RW_HEIGHT}
+        fill="#373737"
+      />
       {/* Top highlight */}
-      <rect x={0} y={RW_TOP} width={mapWidth} height={6} fill="rgba(255,255,255,0.04)" />
+      <rect
+        x={0}
+        y={RW_TOP}
+        width={mapWidth}
+        height={6}
+        fill="rgba(255,255,255,0.04)"
+      />
       {/* White edge lines */}
-      <rect x={0} y={RW_TOP} width={mapWidth} height={5} fill="white" opacity={0.85} />
-      <rect x={0} y={RW_BOTTOM - 5} width={mapWidth} height={5} fill="white" opacity={0.85} />
+      <rect
+        x={0}
+        y={RW_TOP}
+        width={mapWidth}
+        height={5}
+        fill="white"
+        opacity={0.85}
+      />
+      <rect
+        x={0}
+        y={RW_BOTTOM - 5}
+        width={mapWidth}
+        height={5}
+        fill="white"
+        opacity={0.85}
+      />
 
       {/* Yellow center dashes */}
       {Array.from({ length: dashCount }, (_, i) => (
@@ -254,12 +354,12 @@ function RunwaySVG({
       {chapters.map((ch) =>
         ([-1, 1] as const).map((side) =>
           [0, 1, 2, 3].map((row) => {
-            const blockH  = 9;
-            const gap     = 3;
-            const totalH  = 4 * blockH + 3 * gap;
-            const startY  = RW_CENTER - totalH / 2;
-            const bx      = side === -1 ? ch.x - 38 : ch.x + 28;
-            const by      = startY + row * (blockH + gap);
+            const blockH = 9;
+            const gap = 3;
+            const totalH = 4 * blockH + 3 * gap;
+            const startY = RW_CENTER - totalH / 2;
+            const bx = side === -1 ? ch.x - 38 : ch.x + 28;
+            const by = startY + row * (blockH + gap);
             return (
               <rect
                 key={`${ch.id}-${side}-${row}`}
@@ -303,17 +403,9 @@ export default function ChapterSelection() {
   );
   const { trees, rocks, flowers } = decorations.current;
 
-  const lastUnlockedIndex = chapters.reduce(
-    (last, ch, idx) => (ch.stars !== -1 ? idx : last),
-    0,
-  );
-  const maxReachableSampleIndex =
-    samples.length > 0
-      ? findClosestSampleIndex(samples, chapters[lastUnlockedIndex])
-      : 0;
+  const maxReachableSampleIndex = samples.length > 0 ? samples.length - 1 : 0;
 
-  const startChapter =
-    chapters.find((c) => c.stars === 0) ?? chapters[lastUnlockedIndex];
+  const startChapter = chapters.find((c) => c.stars === 0) ?? chapters[0];
   const initialSampleIndex =
     samples.length > 0 ? findClosestSampleIndex(samples, startChapter) : 0;
 
@@ -335,9 +427,8 @@ export default function ChapterSelection() {
     y: chapters[0]?.y ?? 0,
   };
 
-  const nearestChapter = chapters.length > 0
-    ? findNearestByX(chapters, characterPosition.x)
-    : null;
+  const nearestChapter =
+    chapters.length > 0 ? findNearestByX(chapters, characterPosition.x) : null;
 
   const isCharacterOnNode =
     nearestChapter !== null &&
@@ -345,14 +436,14 @@ export default function ChapterSelection() {
 
   const currentProgressChapter = chapters.find((c) => c.stars === 0);
 
-  // Enter key — navigate to the nearest unlocked chapter's level-selection.
+  // Enter key — navigate to the nearest chapter's level-selection.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== "Enter") return;
       const pos = samples[characterSampleIndexRef.current];
       if (!pos || chapters.length === 0) return;
       const nearest = findNearestByX(chapters, pos.x);
-      if (nearest.stars !== -1 && Math.abs(nearest.x - pos.x) < NODE_RADIUS) {
+      if (Math.abs(nearest.x - pos.x) < NODE_RADIUS) {
         navigate(`/level-selection?chapter=${nearest.id}`);
       }
     }
@@ -369,7 +460,12 @@ export default function ChapterSelection() {
       <div className="flex-1 flex flex-col items-center justify-center py-4">
         <div className="flex items-center w-full gap-2 px-2">
           <button
-            onClick={() => scrollContainerRef.current?.scrollBy({ left: -320, behavior: "smooth" })}
+            onClick={() =>
+              scrollContainerRef.current?.scrollBy({
+                left: -320,
+                behavior: "smooth",
+              })
+            }
             className="shrink-0 font-pixel text-stone-200 bg-stone-700/80 dark:bg-stone-900/80 border-4 border-stone-800 rounded px-3 py-3 hover:brightness-125 active:scale-95 transition-all"
             style={{ boxShadow: "3px 3px 0 rgba(0,0,0,0.4)" }}
             aria-label="Scroll left"
@@ -383,7 +479,10 @@ export default function ChapterSelection() {
             style={{ cursor: "grab" }}
             {...dragHandlers}
           >
-            <div className="relative" style={{ width: mapWidth, height: MAP_HEIGHT }}>
+            <div
+              className="relative"
+              style={{ width: mapWidth, height: MAP_HEIGHT }}
+            >
               <svg
                 className="absolute inset-0 pointer-events-none"
                 width={mapWidth}
@@ -391,24 +490,31 @@ export default function ChapterSelection() {
               >
                 {/* ── Grass background ── */}
                 <rect width={mapWidth} height={MAP_HEIGHT} fill="#3d7a20" />
-                {Array.from({ length: Math.ceil(mapWidth / 600) }).map((_, segmentIndex) => (
-                  <rect
-                    key={segmentIndex}
-                    x={segmentIndex * 600}
-                    y={0}
-                    width={600}
-                    height={MAP_HEIGHT}
-                    fill={segmentIndex % 2 === 0 ? "#448c22" : "#3a7018"}
-                    opacity={segmentIndex % 2 === 0 ? 0.25 : 0.20}
-                  />
-                ))}
+                {Array.from({ length: Math.ceil(mapWidth / 600) }).map(
+                  (_, segmentIndex) => (
+                    <rect
+                      key={segmentIndex}
+                      x={segmentIndex * 600}
+                      y={0}
+                      width={600}
+                      height={MAP_HEIGHT}
+                      fill={segmentIndex % 2 === 0 ? "#448c22" : "#3a7018"}
+                      opacity={segmentIndex % 2 === 0 ? 0.25 : 0.2}
+                    />
+                  ),
+                )}
 
                 {/* ── Decorations behind runway ── */}
                 {rocks.map((rock, i) => (
                   <RockSVG key={i} x={rock.x} y={rock.y} scale={rock.scale} />
                 ))}
                 {flowers.map((flower, i) => (
-                  <FlowerSVG key={i} x={flower.x} y={flower.y} color={flower.color} />
+                  <FlowerSVG
+                    key={i}
+                    x={flower.x}
+                    y={flower.y}
+                    color={flower.color}
+                  />
                 ))}
 
                 {/* ── Runway ── */}
@@ -422,8 +528,10 @@ export default function ChapterSelection() {
                     y={ch.y}
                     isCompleted={ch.stars > 0}
                     isCurrent={currentProgressChapter?.id === ch.id}
-                    isLocked={ch.stars === -1}
-                    isCharacterNearby={isCharacterOnNode && nearestChapter?.id === ch.id}
+                    isLocked={false}
+                    isCharacterNearby={
+                      isCharacterOnNode && nearestChapter?.id === ch.id
+                    }
                   />
                 ))}
 
@@ -445,7 +553,9 @@ export default function ChapterSelection() {
                     position: "absolute",
                     left: characterPosition.x,
                     top: characterPosition.y - JET_H / 2,
-                    animation: isMoving ? undefined : "jetIdle 2s ease-in-out infinite",
+                    animation: isMoving
+                      ? undefined
+                      : "jetIdle 2s ease-in-out infinite",
                     pointerEvents: "none",
                     zIndex: 20,
                     willChange: "transform",
@@ -458,7 +568,12 @@ export default function ChapterSelection() {
           </div>
 
           <button
-            onClick={() => scrollContainerRef.current?.scrollBy({ left: 320, behavior: "smooth" })}
+            onClick={() =>
+              scrollContainerRef.current?.scrollBy({
+                left: 320,
+                behavior: "smooth",
+              })
+            }
             className="shrink-0 font-pixel text-stone-200 bg-stone-700/80 dark:bg-stone-900/80 border-4 border-stone-800 rounded px-3 py-3 hover:brightness-125 active:scale-95 transition-all"
             style={{ boxShadow: "3px 3px 0 rgba(0,0,0,0.4)" }}
             aria-label="Scroll right"
