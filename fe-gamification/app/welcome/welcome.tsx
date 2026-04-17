@@ -20,12 +20,6 @@ const mainMenuItems = [
   { to: "/rangliste", label: "Rangliste", icon: "🏆" },
 ];
 
-const footerMenuItems = [
-  { to: "/einstellungen", label: "Einstellungen..." },
-  { href: "https://reactrouter.com/docs", label: "Docs", external: true },
-  { href: "https://rmx.as/discord", label: "Discord", external: true },
-];
-
 const buttonClass =
   "menu-button block w-full py-4 px-6 font-pixel text-base sm:text-lg text-stone-200 bg-stone-600 dark:bg-stone-700 border-4 border-stone-800 dark:border-stone-800 rounded hover:brightness-110 active:scale-[0.98] transition-all text-center";
 const buttonStyle = {
@@ -137,30 +131,6 @@ export function Welcome() {
           )}
         </nav>
       </div>
-
-      <footer className="flex flex-wrap items-center justify-center gap-3 md:gap-6 px-4 py-4 bg-stone-900/50 dark:bg-stone-950/70 border-t-2 border-stone-700 dark:border-stone-800">
-        {footerMenuItems.map((item) =>
-          "external" in item && item.external ? (
-            <a
-              key={item.label}
-              href={item.href}
-              target="_blank"
-              rel="noreferrer"
-              className="footer-btn font-pixel text-xs sm:text-sm text-stone-300 hover:text-amber-400 py-2 px-3 rounded border-2 border-stone-600 hover:border-amber-500/50 transition-colors"
-            >
-              {item.label}
-            </a>
-          ) : (
-            <Link
-              key={item.label}
-              to={(item as { to: string }).to}
-              className="footer-btn font-pixel text-xs sm:text-sm text-stone-300 hover:text-amber-400 py-2 px-3 rounded border-2 border-stone-600 hover:border-amber-500/50 transition-colors"
-            >
-              {item.label}
-            </Link>
-          ),
-        )}
-      </footer>
 
       <div className="flex justify-between items-center px-4 py-2 text-stone-600 dark:text-stone-500 font-pixel text-xs">
         <span>Learning Gamification v1.0</span>

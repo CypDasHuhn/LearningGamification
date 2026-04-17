@@ -89,9 +89,8 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
     y: levels[0]?.y ?? 0,
   };
 
-  const nearestLevelToCharacter = levels.length > 0
-    ? findNearestByX(levels, characterPosition.x)
-    : null;
+  const nearestLevelToCharacter =
+    levels.length > 0 ? findNearestByX(levels, characterPosition.x) : null;
 
   const isCharacterOnNode =
     nearestLevelToCharacter !== null &&
@@ -118,13 +117,24 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [levels, navigate, samples, chapterTitle, searchParams, characterSampleIndexRef]);
+  }, [
+    levels,
+    navigate,
+    samples,
+    chapterTitle,
+    searchParams,
+    characterSampleIndexRef,
+  ]);
 
   return (
     <main className="min-h-screen flex flex-col bg-linear-to-b from-sky-300 via-amber-100 to-emerald-200">
       <style>{CHARACTER_KEYFRAMES}</style>
 
-      <IngameHeader siteName="Level Auswahl" backTo="/chapter-selection" backLabel="KAPITEL" />
+      <IngameHeader
+        siteName="Level Auswahl"
+        backTo="/chapter-selection"
+        backLabel="KAPITEL"
+      />
 
       <div className="flex-1 flex flex-col items-center justify-center py-4">
         <div className="flex items-center w-full gap-2 px-2">
@@ -306,15 +316,6 @@ export function LevelSelection({ levels }: { levels: Level[] }) {
           ← → BEWEGEN &nbsp;|&nbsp; ↵ LEVEL STARTEN
         </p>
       </div>
-
-      <footer className="flex flex-wrap items-center justify-center gap-3 md:gap-6 px-4 py-4 bg-stone-900/50 dark:bg-stone-950/70 border-t-2 border-stone-700 dark:border-stone-800">
-        <Link
-          to="/einstellungen"
-          className="font-pixel text-xs sm:text-sm text-stone-300 hover:text-amber-400 py-2 px-3 rounded border-2 border-stone-600 hover:border-amber-500/50 transition-colors"
-        >
-          Einstellungen...
-        </Link>
-      </footer>
 
       <div className="flex justify-between items-center px-4 py-2 text-stone-600 dark:text-stone-500 font-pixel text-xs">
         <span>Learning Gamification v1.0</span>

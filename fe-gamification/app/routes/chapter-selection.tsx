@@ -590,15 +590,6 @@ export default function ChapterSelection() {
         </p>
       </div>
 
-      <footer className="flex flex-wrap items-center justify-center gap-3 md:gap-6 px-4 py-4 bg-stone-900/50 dark:bg-stone-950/70 border-t-2 border-stone-700 dark:border-stone-800">
-        <Link
-          to="/einstellungen"
-          className="font-pixel text-xs sm:text-sm text-stone-300 hover:text-amber-400 py-2 px-3 rounded border-2 border-stone-600 hover:border-amber-500/50 transition-colors"
-        >
-          Einstellungen...
-        </Link>
-      </footer>
-
       <div className="flex justify-between items-center px-4 py-2 text-stone-600 dark:text-stone-500 font-pixel text-xs">
         <span>Learning Gamification v1.0</span>
         <span className="opacity-80">© 2025</span>
