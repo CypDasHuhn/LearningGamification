@@ -31,12 +31,33 @@ import { PlatformSVG } from "../components/design/structures/PlatformSVG";
 
 // All chapters share the same Y so they sit on the flat runway centerline.
 const RUNWAY_Y = 215;
+const CHAPTER_START_X = 300;
+const CHAPTER_END_PADDING = 300;
+const CHAPTER_MAX_SPACING = 620;
+const CHAPTER_MIN_SPACING = NODE_RADIUS * 2 + 50;
 
 const FALLBACK_CHAPTERS: Level[] = [
-  { id: 1, x: 300,  y: RUNWAY_Y, stars: 1,  title: "Einführung" },
-  { id: 2, x: 920,  y: RUNWAY_Y, stars: 0,  title: "Variablen" },
+  { id: 1, x: 300, y: RUNWAY_Y, stars: 1, title: "Einführung" },
+  { id: 2, x: 920, y: RUNWAY_Y, stars: 0, title: "Variablen" },
   { id: 3, x: 1540, y: RUNWAY_Y, stars: -1, title: "Schleifen" },
 ];
+
+function computeChapterSpacing(chapterCount: number): number {
+  if (chapterCount <= 1) return CHAPTER_MAX_SPACING;
+
+  const availableWidth = MAP_WIDTH - CHAPTER_START_X - CHAPTER_END_PADDING;
+  const fitSpacing = Math.floor(availableWidth / (chapterCount - 1));
+  return Math.max(CHAPTER_MIN_SPACING, Math.min(CHAPTER_MAX_SPACING, fitSpacing));
+}
+
+function computeMapWidth(chapters: Level[]): number {
+  if (chapters.length === 0) return MAP_WIDTH;
+  const maxX = chapters.reduce(
+    (largestX, chapter) => Math.max(largestX, chapter.x),
+    CHAPTER_START_X,
+  );
+  return Math.max(MAP_WIDTH, maxX + CHAPTER_END_PADDING);
+}
 
 /**
  * Converts the API theme list to the flat `Level[]` format used by the map.
@@ -47,10 +68,11 @@ const FALLBACK_CHAPTERS: Level[] = [
  */
 function themesToChapters(themes: ThemeResponse[]): Level[] {
   if (themes.length === 0) return FALLBACK_CHAPTERS;
-  const xPositions = [300, 920, 1540];
+  const chapterSpacing = computeChapterSpacing(themes.length);
+
   return themes.map((t, i) => ({
     id: t.themeId,
-    x: xPositions[i % xPositions.length] ?? 300 + i * 620,
+    x: CHAPTER_START_X + i * chapterSpacing,
     y: RUNWAY_Y,
     stars: i === 0 ? 1 : i === 1 ? 0 : -1,
     title: t.name,
@@ -190,8 +212,14 @@ function ChapterNode({ chapter }: { chapter: Level }) {
 
 // ─── Runway SVG ───────────────────────────────────────────────────────────────
 /** SVG runway strip with edge lines, center dashes, and touchdown zone markings. */
-function RunwaySVG({ chapters }: { chapters: Level[] }) {
-  const dashCount = Math.ceil(MAP_WIDTH / 50);
+function RunwaySVG({
+  chapters,
+  mapWidth,
+}: {
+  chapters: Level[];
+  mapWidth: number;
+}) {
+  const dashCount = Math.ceil(mapWidth / 50);
   const dashW = 32;
   const dashH = 8;
   const dashY = RW_CENTER - dashH / 2;
@@ -199,14 +227,14 @@ function RunwaySVG({ chapters }: { chapters: Level[] }) {
   return (
     <g>
       {/* Gravel shoulder */}
-      <rect x={0} y={RW_TOP - 8} width={MAP_WIDTH} height={RW_HEIGHT + 16} fill="#5c5c46" />
+      <rect x={0} y={RW_TOP - 8} width={mapWidth} height={RW_HEIGHT + 16} fill="#5c5c46" />
       {/* Asphalt surface */}
-      <rect x={0} y={RW_TOP} width={MAP_WIDTH} height={RW_HEIGHT} fill="#373737" />
+      <rect x={0} y={RW_TOP} width={mapWidth} height={RW_HEIGHT} fill="#373737" />
       {/* Top highlight */}
-      <rect x={0} y={RW_TOP} width={MAP_WIDTH} height={6} fill="rgba(255,255,255,0.04)" />
+      <rect x={0} y={RW_TOP} width={mapWidth} height={6} fill="rgba(255,255,255,0.04)" />
       {/* White edge lines */}
-      <rect x={0} y={RW_TOP}          width={MAP_WIDTH} height={5} fill="white" opacity={0.85} />
-      <rect x={0} y={RW_BOTTOM - 5}   width={MAP_WIDTH} height={5} fill="white" opacity={0.85} />
+      <rect x={0} y={RW_TOP} width={mapWidth} height={5} fill="white" opacity={0.85} />
+      <rect x={0} y={RW_BOTTOM - 5} width={mapWidth} height={5} fill="white" opacity={0.85} />
 
       {/* Yellow center dashes */}
       {Array.from({ length: dashCount }, (_, i) => (
@@ -262,6 +290,7 @@ function RunwaySVG({ chapters }: { chapters: Level[] }) {
 export default function ChapterSelection() {
   const { chapters } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  const mapWidth = computeMapWidth(chapters);
 
   const pathSamples = useRef<{ x: number; y: number }[]>([]);
   if (pathSamples.current.length === 0 && chapters.length > 1) {
@@ -354,17 +383,25 @@ export default function ChapterSelection() {
             style={{ cursor: "grab" }}
             {...dragHandlers}
           >
-            <div className="relative" style={{ width: MAP_WIDTH, height: MAP_HEIGHT }}>
+            <div className="relative" style={{ width: mapWidth, height: MAP_HEIGHT }}>
               <svg
                 className="absolute inset-0 pointer-events-none"
-                width={MAP_WIDTH}
+                width={mapWidth}
                 height={MAP_HEIGHT}
               >
                 {/* ── Grass background ── */}
-                <rect width={MAP_WIDTH} height={MAP_HEIGHT} fill="#3d7a20" />
-                <rect x={0}    y={0} width={600} height={MAP_HEIGHT} fill="#448c22" opacity={0.25} />
-                <rect x={700}  y={0} width={500} height={MAP_HEIGHT} fill="#3a7018" opacity={0.20} />
-                <rect x={1300} y={0} width={540} height={MAP_HEIGHT} fill="#448c22" opacity={0.22} />
+                <rect width={mapWidth} height={MAP_HEIGHT} fill="#3d7a20" />
+                {Array.from({ length: Math.ceil(mapWidth / 600) }).map((_, segmentIndex) => (
+                  <rect
+                    key={segmentIndex}
+                    x={segmentIndex * 600}
+                    y={0}
+                    width={600}
+                    height={MAP_HEIGHT}
+                    fill={segmentIndex % 2 === 0 ? "#448c22" : "#3a7018"}
+                    opacity={segmentIndex % 2 === 0 ? 0.25 : 0.20}
+                  />
+                ))}
 
                 {/* ── Decorations behind runway ── */}
                 {rocks.map((rock, i) => (
@@ -375,7 +412,7 @@ export default function ChapterSelection() {
                 ))}
 
                 {/* ── Runway ── */}
-                <RunwaySVG chapters={chapters} />
+                <RunwaySVG chapters={chapters} mapWidth={mapWidth} />
 
                 {/* ── Platform nodes ── */}
                 {chapters.map((ch) => (

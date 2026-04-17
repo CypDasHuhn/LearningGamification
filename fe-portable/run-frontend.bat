@@ -4,7 +4,7 @@ setlocal
 cd /d "%~dp0"
 
 if not defined BACKEND_URL set "BACKEND_URL=http://localhost:8080"
-if not defined PORT set "PORT=3000"
+if not defined PORT set "PORT=3010"
 
 if not exist ".\node\node.exe" (
   for /f "delims=" %%F in ('dir /b /a:-d /o:-d ".\node-v*-win-x64.zip" 2^>nul') do (

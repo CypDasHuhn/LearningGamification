@@ -1124,63 +1124,63 @@ INSERT INTO question (question_id, question_set_id, question_type, start_text, i
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (223, 5);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (742, 223, 'True', TRUE, 1);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (743, 223, 'False', FALSE, 2);
-INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) 
+INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (224, 8, 'GAP', 'Der Operator für Mustervergleiche lautet', NULL, NULL, FALSE, 1);
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (224, 5);
 INSERT INTO gap_field (gap_id, question_id, gap_index, text_before, text_after) VALUES (42, 224, 1, NULL, NULL);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (73, 42, 'Like', TRUE, 1);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (74, 42, '=', FALSE, 2);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (75, 42, 'IN', FALSE, 3);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (76, 42, 'BETWEEN', FALSE, 4);
-INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) 
+INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (225, 8, 'GAP', 'Die Klausel, die die Anzahl der Zeilen reduziert, heißt', NULL, '.', FALSE, 2);
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (225, 5);
 INSERT INTO gap_field (gap_id, question_id, gap_index, text_before, text_after) VALUES (43, 225, 1, NULL, NULL);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (77, 43, 'WHERE', TRUE, 1);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (78, 43, 'GROUP BY', FALSE, 2);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (79, 43, 'ORDER BY', FALSE, 3);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (80, 43, 'HAVING', FALSE, 4);
-INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) 
+INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (226, 8, 'GAP', 'Mit', NULL, 'werden neue Zeilen eingefügt.', FALSE, 1);
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (226, 5);
 INSERT INTO gap_field (gap_id, question_id, gap_index, text_before, text_after) VALUES (44, 226, 1, NULL, NULL);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (81, 44, 'INSERT INTO', TRUE, 1);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (82, 44, 'UPDATE', FALSE, 2);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (83, 44, 'SELECT', FALSE, 3);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (84, 44, 'DELETE FROM', FALSE, 4);
-INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) 
+INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (227, 8, 'GAP', 'JOIN-Bedingungen stehen üblicherweise nach dem Schlüsselwort', NULL, '.', FALSE, 1);
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (227, 5);
 INSERT INTO gap_field (gap_id, question_id, gap_index, text_before, text_after) VALUES (45, 227, 1, NULL, NULL);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (85, 45, 'ON', TRUE, 1);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (86, 45, 'WHERE', FALSE, 2);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (87, 45, 'USING', FALSE, 3);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (88, 45, 'FROM', FALSE, 4);
-INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) 
+INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (228, 8, 'GAP', 'Eine SQL-Abfrage endet mit einem', NULL, '.', FALSE, 1);
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (228, 5);
 INSERT INTO gap_field (gap_id, question_id, gap_index, text_before, text_after) VALUES (46, 228, 1, NULL, NULL);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (89, 46, 'Semikolon', TRUE, 1);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (90, 46, 'Komma', FALSE, 2);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (91, 46, 'Punkt', FALSE, 3);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (92, 46, 'Doppelpunkt', FALSE, 4);
-INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) 
+INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (229, 8, 'GAP', 'Ein Index wird mit', NULL, 'erstellt', FALSE, 1);
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (229, 5);
 INSERT INTO gap_field (gap_id, question_id, gap_index, text_before, text_after) VALUES (47, 229, 1, NULL, NULL);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (93, 47, 'CREATE INDEX', TRUE, 1);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (94, 47, 'CREATE TABLE', FALSE, 2);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (95, 47, 'ALTER TABLE', FALSE, 3);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (96, 47, 'CREATE VIEW', FALSE, 4);
-INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) 
+INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (230, 8, 'GAP', 'Die Klausel', NULL, 'sortiert Abfrageergebnisse.', FALSE, 1);
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (230, 5);
 INSERT INTO gap_field (gap_id, question_id, gap_index, text_before, text_after) VALUES (48, 230, 1, NULL, NULL);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (97, 48, 'ORDER BY', TRUE, 1);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (98, 48, 'GROUP BY', FALSE, 2);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (99, 48, 'HAVING', FALSE, 3);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (100, 48, 'WHERE', FALSE, 4);
-INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) 
+INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (231, 8, 'GAP', 'Mit', NULL, 'können Zeilen gruppiert werden.', FALSE, 1);
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (231, 5);
 INSERT INTO gap_field (gap_id, question_id, gap_index, text_before, text_after) VALUES (49, 231, 1, NULL, NULL);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (101, 49, 'GROUP BY', TRUE, 1);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (102, 49, 'ORDER BY', FALSE, 2);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (103, 49, 'DISTINCT', FALSE, 3);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (104, 49, 'LIMIT', FALSE, 4);
-INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) 
+INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (232, 8, 'GAP', 'Die Funktion', NULL, 'berechnet den Durchschnitt.', FALSE, 1);
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (232, 5);
 INSERT INTO gap_field (gap_id, question_id, gap_index, text_before, text_after) VALUES (50, 232, 1, NULL, NULL);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (105, 50, 'AVG', TRUE, 1);
@@ -1903,7 +1903,7 @@ INSERT INTO question (question_id, question_set_id, question_type, start_text, i
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (325, 8);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (984, 325, 'True', TRUE, 1);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (985, 325, 'False', FALSE, 2);
-INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (326, 16, 'MC', 'Was wird die Ausgabe des folgenden Programms sein?
+INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (326, 16, 'MC', 'Was wird die Ausgabe des folgenden Programms sein? class CustomException extends Exception { public CustomException(String message) { super(message); } } public class Printer { public static void main(String[] args) { try { throw new CustomException("Custom error occurred"); } catch (CustomException e) { System.out.println(e.getMessage()); } } }', NULL, NULL, FALSE, 1);
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (326, 8);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (986, 326, 'Custom error occurred', TRUE, 1);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (987, 326, 'Runtime Exception', FALSE, 2);
@@ -1919,7 +1919,7 @@ INSERT INTO question (question_id, question_set_id, question_type, start_text, i
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (328, 8);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (994, 328, 'True', TRUE, 1);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (995, 328, 'False', FALSE, 2);
-INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (329, 16, 'MC', 'Was wird die Ausgabe des folgenden Codes sein?
+INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (329, 16, 'MC', 'Was wird die Ausgabe des folgenden Codes sein? class A { void display() { System.out.println("Class A"); } } class B extends A { void display() { System.out.println("Class B"); } } public class Main { public static void main(String[] args) { A obj = new B(); obj.display(); } }', NULL, NULL, FALSE, 1);
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (329, 8);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (996, 329, 'Class A', FALSE, 1);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (997, 329, 'Class B', TRUE, 2);
@@ -1943,13 +1943,13 @@ INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_o
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1009, 332, 'false', TRUE, 2);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1010, 332, 'null', FALSE, 3);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1011, 332, '0', FALSE, 4);
-INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (333, 16, 'MC', 'Was wird die Ausgabe dieses Codes sein?
+INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (333, 16, 'MC', 'Was wird die Ausgabe dieses Codes sein? int a = 7; double b = 2; System.out.println(a / b);', NULL, NULL, FALSE, 1);
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (333, 8);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1012, 333, '3', FALSE, 1);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1013, 333, '3.5', TRUE, 2);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1014, 333, '3.0', FALSE, 3);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1015, 333, 'Fehler', FALSE, 4);
-INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (334, 16, 'MC', 'Was wird die Ausgabe dieses Codes sein?
+INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (334, 16, 'MC', 'Was wird die Ausgabe dieses Codes sein? byte x = 127; x++; System.out.println(x);', NULL, NULL, FALSE, 1);
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (334, 8);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1016, 334, '128', FALSE, 1);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1017, 334, '127', FALSE, 2);
@@ -1967,7 +1967,7 @@ INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_o
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1025, 336, '4 Bytes', FALSE, 2);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1026, 336, '2 Bytes', TRUE, 3);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1027, 336, 'Plattformabhängig', FALSE, 4);
-INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (337, 17, 'MC', 'Ausgabe des folgenden Java-Programms:
+INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (337, 17, 'MC', 'Ausgabe des folgenden Java-Programms: class Main { public static void main(String args[]){ final int i; i = 20; System.out.println(i); } }', NULL, NULL, FALSE, 2);
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (337, 8);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1028, 337, '20', TRUE, 1);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1029, 337, 'Compilerfehler', FALSE, 2);
@@ -2027,7 +2027,7 @@ INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_o
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1063, 347, 'Instanzvariablen', FALSE, 2);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1064, 347, 'Methodenaufrufe und lokale Variablen', TRUE, 3);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1065, 347, 'Statische Variablen', FALSE, 4);
-INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (348, 18, 'GAP', 'public static void main(String... args) {\n   int a = 5;\n   String s = new String("Hello");\n}\n\nDie Variable a wird im _ gespeichert und die Referenzvariable s wird im _ gespeichert.\nDas eigentliche String-Objekt wird im _ gespeichert.', NULL, NULL, FALSE, 3);
+INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (348, 18, 'GAP', 'public static void main(String... args) {\n int a = 5;\n String s = new String("Hello");\n}\n\nDie Variable a wird im _ gespeichert und die Referenzvariable s wird im _ gespeichert.\nDas eigentliche String-Objekt wird im _ gespeichert.', NULL, NULL, FALSE, 3);
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (348, 8);
 INSERT INTO gap_field (gap_id, question_id, gap_index, text_before, text_after) VALUES (108, 348, 0, 'Die Variable a wird im', 'gespeichert und die Referenzvariable s wird im');
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (325, 108, 'Stack', TRUE, 1);
@@ -2062,7 +2062,7 @@ INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_o
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1067, 350, 'Integer kann sowohl null-Werte als auch int-Werte speichern', TRUE, 2);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1068, 350, 'int ist langsamer als Wrapper-Klassen', FALSE, 3);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1069, 350, 'Integer kann nicht in Collections verwendet werden', FALSE, 4);
-INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (351, 18, 'GAP', 'switch(x) {\n    default:\n        System.out.println("Hello");\n}\n\nAkzeptable Typen für x sind _ und _.', NULL, NULL, FALSE, 3);
+INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (351, 18, 'GAP', 'switch(x) {\n default:\n System.out.println("Hello");\n}\n\nAkzeptable Typen für x sind _ und _.', NULL, NULL, FALSE, 3);
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (351, 8);
 INSERT INTO gap_field (gap_id, question_id, gap_index, text_before, text_after) VALUES (115, 351, 0, 'Akzeptable Typen für x sind', 'und');
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (343, 115, 'byte', TRUE, 1);
@@ -2078,7 +2078,7 @@ INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_o
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (352, 116, 'float', FALSE, 4);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (353, 116, 'Short', FALSE, 5);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (354, 116, 'Long', FALSE, 6);
-INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (352, 18, 'MC', '1  double d1 = 5f;\n2  double d2 = 5.0;\n3  float f1 = 5f;\n4  float f2 = 5.0;\n\nIn welcher Zeile tritt zuerst ein Compilerfehler auf?', NULL, NULL, FALSE, 3);
+INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (352, 18, 'MC', '1 double d1 = 5f;\n2 double d2 = 5.0;\n3 float f1 = 5f;\n4 float f2 = 5.0;\n\nIn welcher Zeile tritt zuerst ein Compilerfehler auf?', NULL, NULL, FALSE, 3);
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (352, 8);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1070, 352, '1', FALSE, 1);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1071, 352, '2', FALSE, 2);
@@ -2100,7 +2100,7 @@ INSERT INTO question (question_id, question_set_id, question_type, start_text, i
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (355, 8);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1082, 355, 'Eine einzige Instanz', TRUE, 1);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1083, 355, 'Mehrere Logger, die in einen Logger geleitet werden', FALSE, 2);
-INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (356, 19, 'MC', 'Was ist gemäß Clean-Code-Prinzipien falsch an dieser Methode?\nMehrere Antworten sind korrekt.\n\npublic static void doStuff(int a, int b, boolean flag, String s) {\n    int x = a + b;\n    if(flag) {\n        x *= 2;\n        System.out.println(s + x);\n    } else {\n        for(int i=0;i<3;i++) {\n            x += i;\n            System.out.println(x);\n        }\n    }\n}', NULL, NULL, TRUE, 4);
+INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (356, 19, 'MC', 'Was ist gemäß Clean-Code-Prinzipien falsch an dieser Methode?\nMehrere Antworten sind korrekt.\n\npublic static void doStuff(int a, int b, boolean flag, String s) {\n int x = a + b;\n if(flag) {\n x *= 2;\n System.out.println(s + x);\n } else {\n for(int i=0;i<3;i++) {\n x += i;\n System.out.println(x);\n }\n }\n}', NULL, NULL, TRUE, 4);
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (356, 8);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1084, 356, 'Magische Argumente', TRUE, 1);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1085, 356, 'Unklare Variablenbenennung', TRUE, 2);
@@ -2887,7 +2887,7 @@ INSERT INTO Question_Theme (question_id, theme_id) VALUES (482, 5);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1503, 482, 'GROUP BY fasst Datensätze nach bestimmten Spalten zusammen, oft in Kombination mit Aggregatfunktionen.', TRUE, 1);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1504, 482, 'GROUP BY fasst Datensätze nach bestimmten Gruppennamen zusammen.', FALSE, 2);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1505, 482, 'GROUP BY fügt Datensätze in eine neuen Spalte zusammen.', FALSE, 3);
-INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (483, 22, 'MC', 'Was bedeutet 3.  Normalform?', NULL, NULL, FALSE, 1);
+INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (483, 22, 'MC', 'Was bedeutet 3. Normalform?', NULL, NULL, FALSE, 1);
 INSERT INTO Question_Theme (question_id, theme_id) VALUES (483, 4);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1506, 483, 'Die 2. Normalform gilt.', FALSE, 1);
 INSERT INTO mc_answer (answer_id, question_id, option_text, is_correct, option_order) VALUES (1507, 483, 'Es gibt keine transitiven Abhängigkeiten zwischen Nicht-Schlüsselattributen.', FALSE, 2);
@@ -3176,11 +3176,13 @@ INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_o
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (456, 144, 'Werk', FALSE, 3);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (457, 144, 'Kauf', FALSE, 4);
 INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (531, 22, 'GAP', NULL, NULL, 'Das Urheberrecht schuetzt Softwareentwickler automatisch vor unerlaubter Nutzung ihres Codes.', FALSE, 1);
+INSERT INTO Question_Theme(question_id, theme_id) VALUES (531, 2);
 INSERT INTO gap_field (gap_id, question_id, gap_index, text_before, text_after) VALUES (145, 531, 1, 'Das', 'recht schuetzt Softwareentwickler vor unerlaubter Nutzung ihres Codes.');
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (458, 145, 'Urheber', TRUE, 1);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (459, 145, 'Marken', FALSE, 2);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (460, 145, 'Patent', FALSE, 3);
 INSERT INTO question (question_id, question_set_id, question_type, start_text, image_url, end_text, allows_multiple, points) VALUES (532, 22, 'GAP', NULL, NULL, 'Jede Verarbeitung personenbezogener Daten benoetigt eine Rechtsgrundlage nach DSGVO.', FALSE, 1);
+INSERT INTO Question_Theme(question_id, theme_id) VALUES (532, 2);
 INSERT INTO gap_field (gap_id, question_id, gap_index, text_before, text_after) VALUES (146, 532, 1, 'Personenbezogene Daten duerfen nur verarbeitet werden, wenn eine', 'vorliegt.');
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (461, 146, 'Rechtsgrundlage', TRUE, 1);
 INSERT INTO gap_option (gap_option_id, gap_id, option_text, is_correct, option_order) VALUES (462, 146, 'Datenschutzerklaerung', FALSE, 2);

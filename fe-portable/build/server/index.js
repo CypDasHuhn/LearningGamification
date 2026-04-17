@@ -66,7 +66,7 @@ const links = () => [];
 function Layout({
   children
 }) {
-  const runtimeApiBase = (typeof process !== "undefined" ? process.env?.BACKEND_URL : void 0) ?? "http://localhost:8080" ?? "http://localhost:8080";
+  const runtimeApiBase = (typeof process !== "undefined" ? process.env?.BACKEND_URL : void 0) ?? void 0 ?? "http://localhost:8080";
   return /* @__PURE__ */ jsxs("html", {
     lang: "en",
     suppressHydrationWarning: true,
@@ -238,7 +238,7 @@ function IngameHeader({
     ] })
   ] }) });
 }
-const API_BASE$1 = (typeof process !== "undefined" ? process.env?.BACKEND_URL : void 0) ?? "http://localhost:8080" ?? "http://localhost:8080";
+const API_BASE$1 = (typeof process !== "undefined" ? process.env?.BACKEND_URL : void 0) ?? void 0 ?? "http://localhost:8080";
 async function apiGetServer(cookieHeader, path) {
   const auth2 = parseAuthFromCookieHeader(cookieHeader);
   if (!auth2?.token) return null;
@@ -758,6 +758,10 @@ function PlatformSVG({
   ] });
 }
 const RUNWAY_Y = 215;
+const CHAPTER_START_X = 300;
+const CHAPTER_END_PADDING = 300;
+const CHAPTER_MAX_SPACING = 620;
+const CHAPTER_MIN_SPACING = NODE_RADIUS * 2 + 50;
 const FALLBACK_CHAPTERS = [{
   id: 1,
   x: 300,
@@ -777,12 +781,23 @@ const FALLBACK_CHAPTERS = [{
   stars: -1,
   title: "Schleifen"
 }];
+function computeChapterSpacing(chapterCount) {
+  if (chapterCount <= 1) return CHAPTER_MAX_SPACING;
+  const availableWidth = MAP_WIDTH - CHAPTER_START_X - CHAPTER_END_PADDING;
+  const fitSpacing = Math.floor(availableWidth / (chapterCount - 1));
+  return Math.max(CHAPTER_MIN_SPACING, Math.min(CHAPTER_MAX_SPACING, fitSpacing));
+}
+function computeMapWidth(chapters) {
+  if (chapters.length === 0) return MAP_WIDTH;
+  const maxX = chapters.reduce((largestX, chapter) => Math.max(largestX, chapter.x), CHAPTER_START_X);
+  return Math.max(MAP_WIDTH, maxX + CHAPTER_END_PADDING);
+}
 function themesToChapters(themes2) {
   if (themes2.length === 0) return FALLBACK_CHAPTERS;
-  const xPositions = [300, 920, 1540];
+  const chapterSpacing = computeChapterSpacing(themes2.length);
   return themes2.map((t, i) => ({
     id: t.themeId,
-    x: xPositions[i % xPositions.length] ?? 300 + i * 620,
+    x: CHAPTER_START_X + i * chapterSpacing,
     y: RUNWAY_Y,
     stars: i === 0 ? 1 : i === 1 ? 0 : -1,
     title: t.name
@@ -959,9 +974,10 @@ function ChapterNode({
   });
 }
 function RunwaySVG({
-  chapters
+  chapters,
+  mapWidth
 }) {
-  const dashCount = Math.ceil(MAP_WIDTH / 50);
+  const dashCount = Math.ceil(mapWidth / 50);
   const dashW = 32;
   const dashH = 8;
   const dashY = RW_CENTER - dashH / 2;
@@ -969,32 +985,32 @@ function RunwaySVG({
     children: [/* @__PURE__ */ jsx("rect", {
       x: 0,
       y: RW_TOP - 8,
-      width: MAP_WIDTH,
+      width: mapWidth,
       height: RW_HEIGHT + 16,
       fill: "#5c5c46"
     }), /* @__PURE__ */ jsx("rect", {
       x: 0,
       y: RW_TOP,
-      width: MAP_WIDTH,
+      width: mapWidth,
       height: RW_HEIGHT,
       fill: "#373737"
     }), /* @__PURE__ */ jsx("rect", {
       x: 0,
       y: RW_TOP,
-      width: MAP_WIDTH,
+      width: mapWidth,
       height: 6,
       fill: "rgba(255,255,255,0.04)"
     }), /* @__PURE__ */ jsx("rect", {
       x: 0,
       y: RW_TOP,
-      width: MAP_WIDTH,
+      width: mapWidth,
       height: 5,
       fill: "white",
       opacity: 0.85
     }), /* @__PURE__ */ jsx("rect", {
       x: 0,
       y: RW_BOTTOM - 5,
-      width: MAP_WIDTH,
+      width: mapWidth,
       height: 5,
       fill: "white",
       opacity: 0.85
@@ -1032,6 +1048,7 @@ const chapterSelection = UNSAFE_withComponentProps(function ChapterSelection() {
     chapters
   } = useLoaderData();
   const navigate = useNavigate();
+  const mapWidth = computeMapWidth(chapters);
   const pathSamples = useRef([]);
   if (pathSamples.current.length === 0 && chapters.length > 1) {
     pathSamples.current = buildPathSamples(chapters, 150);
@@ -1115,39 +1132,27 @@ const chapterSelection = UNSAFE_withComponentProps(function ChapterSelection() {
           children: /* @__PURE__ */ jsxs("div", {
             className: "relative",
             style: {
-              width: MAP_WIDTH,
+              width: mapWidth,
               height: MAP_HEIGHT
             },
             children: [/* @__PURE__ */ jsxs("svg", {
               className: "absolute inset-0 pointer-events-none",
-              width: MAP_WIDTH,
+              width: mapWidth,
               height: MAP_HEIGHT,
               children: [/* @__PURE__ */ jsx("rect", {
-                width: MAP_WIDTH,
+                width: mapWidth,
                 height: MAP_HEIGHT,
                 fill: "#3d7a20"
-              }), /* @__PURE__ */ jsx("rect", {
-                x: 0,
+              }), Array.from({
+                length: Math.ceil(mapWidth / 600)
+              }).map((_, segmentIndex) => /* @__PURE__ */ jsx("rect", {
+                x: segmentIndex * 600,
                 y: 0,
                 width: 600,
                 height: MAP_HEIGHT,
-                fill: "#448c22",
-                opacity: 0.25
-              }), /* @__PURE__ */ jsx("rect", {
-                x: 700,
-                y: 0,
-                width: 500,
-                height: MAP_HEIGHT,
-                fill: "#3a7018",
-                opacity: 0.2
-              }), /* @__PURE__ */ jsx("rect", {
-                x: 1300,
-                y: 0,
-                width: 540,
-                height: MAP_HEIGHT,
-                fill: "#448c22",
-                opacity: 0.22
-              }), rocks.map((rock, i) => /* @__PURE__ */ jsx(RockSVG, {
+                fill: segmentIndex % 2 === 0 ? "#448c22" : "#3a7018",
+                opacity: segmentIndex % 2 === 0 ? 0.25 : 0.2
+              }, segmentIndex)), rocks.map((rock, i) => /* @__PURE__ */ jsx(RockSVG, {
                 x: rock.x,
                 y: rock.y,
                 scale: rock.scale
@@ -1156,7 +1161,8 @@ const chapterSelection = UNSAFE_withComponentProps(function ChapterSelection() {
                 y: flower.y,
                 color: flower.color
               }, i)), /* @__PURE__ */ jsx(RunwaySVG, {
-                chapters
+                chapters,
+                mapWidth
               }), chapters.map((ch) => /* @__PURE__ */ jsx(PlatformSVG, {
                 x: ch.x,
                 y: ch.y,
@@ -2365,7 +2371,7 @@ const route5 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProper
   setAuthToken,
   themes
 }, Symbol.toStringTag, { value: "Module" }));
-const API_BASE = (typeof process !== "undefined" ? process.env?.BACKEND_URL : void 0) ?? "http://localhost:8080" ?? "http://localhost:8080";
+const API_BASE = (typeof process !== "undefined" ? process.env?.BACKEND_URL : void 0) ?? void 0 ?? "http://localhost:8080";
 async function fetchLevelData(levelId, cookieHeader) {
   const auth2 = parseAuthFromCookieHeader(cookieHeader ?? null);
   if (auth2?.token) {
@@ -2399,7 +2405,7 @@ function resolveApiBase() {
     const runtimeApiBase = window.__API_BASE__;
     if (runtimeApiBase) return runtimeApiBase;
   }
-  const serverRuntimeBase = (typeof process !== "undefined" ? process.env?.BACKEND_URL : void 0) ?? "http://localhost:8080";
+  const serverRuntimeBase = (typeof process !== "undefined" ? process.env?.BACKEND_URL : void 0) ?? void 0;
   return serverRuntimeBase ?? DEFAULT_API_BASE;
 }
 async function apiRequest(endpoint, options = {}) {
@@ -4356,7 +4362,7 @@ const route10 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.definePrope
   action,
   default: login
 }, Symbol.toStringTag, { value: "Module" }));
-const serverManifest = { "entry": { "module": "/assets/entry.client-DuOF485a.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js"], "css": [] }, "routes": { "root": { "id": "root", "parentId": void 0, "path": "", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": true, "module": "/assets/root-C1pOrPbb.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js"], "css": ["/assets/root-dPLC4NUv.css"], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/chapter-selection": { "id": "routes/chapter-selection", "parentId": "root", "path": "chapter-selection", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/chapter-selection-B_MGyIk5.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/PlatformSVG-DIQjmj9n.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/level-selection": { "id": "routes/level-selection", "parentId": "root", "path": "level-selection", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/level-selection-BPXQcmka.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/PlatformSVG-DIQjmj9n.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/einstellungen": { "id": "routes/einstellungen", "parentId": "root", "path": "einstellungen", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/einstellungen-DV5mm3cW.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/fortschritt": { "id": "routes/fortschritt", "parentId": "root", "path": "fortschritt", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/fortschritt-DCIZtHQX.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/apiClient": { "id": "routes/apiClient", "parentId": "root", "path": "apiClient", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/apiClient-l0sNRNKZ.js", "imports": [], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/level.$id": { "id": "routes/level.$id", "parentId": "root", "path": "level/:id", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/level._id-3OrfDFcX.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/api-BjjBGEdA.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/rangliste": { "id": "routes/rangliste", "parentId": "root", "path": "rangliste", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/rangliste-DWieQhJq.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/api-BjjBGEdA.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/register": { "id": "routes/register", "parentId": "root", "path": "register", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/register-BtK4quql.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/_index": { "id": "routes/_index", "parentId": "root", "path": void 0, "index": true, "caseSensitive": void 0, "hasAction": true, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/_index-B7k9SUXH.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/login": { "id": "routes/login", "parentId": "root", "path": "login", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/login-DRPmxo_L.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 } }, "url": "/assets/manifest-a401437a.js", "version": "a401437a", "sri": void 0 };
+const serverManifest = { "entry": { "module": "/assets/entry.client-DuOF485a.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js"], "css": [] }, "routes": { "root": { "id": "root", "parentId": void 0, "path": "", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": true, "module": "/assets/root--Lzucaff.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js"], "css": ["/assets/root-dPLC4NUv.css"], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/chapter-selection": { "id": "routes/chapter-selection", "parentId": "root", "path": "chapter-selection", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/chapter-selection-Dq8Atuxa.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/PlatformSVG-DIQjmj9n.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/level-selection": { "id": "routes/level-selection", "parentId": "root", "path": "level-selection", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/level-selection-BPXQcmka.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/PlatformSVG-DIQjmj9n.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/einstellungen": { "id": "routes/einstellungen", "parentId": "root", "path": "einstellungen", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/einstellungen-DV5mm3cW.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/fortschritt": { "id": "routes/fortschritt", "parentId": "root", "path": "fortschritt", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/fortschritt-DCIZtHQX.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/apiClient": { "id": "routes/apiClient", "parentId": "root", "path": "apiClient", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/apiClient-l0sNRNKZ.js", "imports": [], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/level.$id": { "id": "routes/level.$id", "parentId": "root", "path": "level/:id", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/level._id-tOqRTswf.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/api-CuYuvGDR.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/rangliste": { "id": "routes/rangliste", "parentId": "root", "path": "rangliste", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/rangliste-WYR10YBr.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/ingame-header-BxJnPAg-.js", "/assets/api-CuYuvGDR.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/register": { "id": "routes/register", "parentId": "root", "path": "register", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/register-BtK4quql.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/_index": { "id": "routes/_index", "parentId": "root", "path": void 0, "index": true, "caseSensitive": void 0, "hasAction": true, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/_index-B7k9SUXH.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js", "/assets/useClientAuth-qyT9NnyQ.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/login": { "id": "routes/login", "parentId": "root", "path": "login", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/assets/login-DRPmxo_L.js", "imports": ["/assets/chunk-EPOLDU6W-CH8RbHeL.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 } }, "url": "/assets/manifest-34ac9132.js", "version": "34ac9132", "sri": void 0 };
 const assetsBuildDirectory = "build\\client";
 const basename = "/";
 const future = { "unstable_optimizeDeps": false, "unstable_subResourceIntegrity": false, "unstable_trailingSlashAwareDataRequests": false, "v8_middleware": false, "v8_splitRouteModules": false, "v8_viteEnvironmentApi": false };

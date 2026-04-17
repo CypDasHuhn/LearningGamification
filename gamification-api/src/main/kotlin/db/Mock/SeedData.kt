@@ -27,19 +27,61 @@ private fun seedQuestionsFromSqlResource() {
             Thread.currentThread().contextClassLoader.getResourceAsStream(SQLITE_SEED_RESOURCE_PATH)
                     ?: error("Missing seed SQL resource: $SQLITE_SEED_RESOURCE_PATH")
 
-    val statements =
-            stream.bufferedReader(StandardCharsets.UTF_8).useLines { lines ->
-                lines
-                        .map { it.trim() }
-                        .filter { it.isNotEmpty() && !it.startsWith("--") }
-                        .map { it.removeSuffix(";") }
-                        .toList()
-            }
+    val sqlText = stream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
+    val statements = parseSqlStatements(sqlText)
 
     val transaction = TransactionManager.current()
     statements.forEach { statement ->
         transaction.exec(statement)
     }
+}
+
+private fun parseSqlStatements(sqlText: String): List<String> {
+    val statements = mutableListOf<String>()
+    val current = StringBuilder()
+    var inSingleQuote = false
+    var index = 0
+
+    while (index < sqlText.length) {
+        val char = sqlText[index]
+
+        if (!inSingleQuote && char == '-' && index + 1 < sqlText.length && sqlText[index + 1] == '-') {
+            while (index < sqlText.length && sqlText[index] != '\n') {
+                index++
+            }
+            continue
+        }
+
+        current.append(char)
+
+        if (char == '\'') {
+            if (inSingleQuote) {
+                if (index + 1 < sqlText.length && sqlText[index + 1] == '\'') {
+                    current.append(sqlText[index + 1])
+                    index++
+                } else {
+                    inSingleQuote = false
+                }
+            } else {
+                inSingleQuote = true
+            }
+        } else if (char == ';' && !inSingleQuote) {
+            val statement = current.toString().trim().removeSuffix(";").trim()
+            if (statement.isNotEmpty()) {
+                statements.add(statement)
+            }
+            current.setLength(0)
+        }
+
+        index++
+    }
+
+    val trailing = current.toString().trim().removeSuffix(";").trim()
+    if (trailing.isNotEmpty()) {
+        statements.add(trailing)
+    }
+
+    return statements
 }
 
 private fun seedDemoUser() {
